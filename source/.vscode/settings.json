@@ -1,0 +1,76 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "assert.h": "c",
+        "valve_init.h": "c",
+        "gpio.h": "c",
+        "type_traits": "c",
+        "gpio_common.h": "c",
+        "unistd.h": "c",
+        "stdint.h": "c",
+        "stat.h": "c",
+        "types.h": "c",
+        "pthread.h": "c",
+        "pthreadtypes.h": "c",
+        "valve.h": "c",
+        "queue.h": "c",
+        "stdio.h": "c",
+        "encoder.h": "c",
+        "semaphore.h": "c"
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/miaow/zlg/epc9600",
+            "binaryPath": "/home/miaow/zlg/epc9600",
+            "binaryArgs": []
+        }
+    ],
+
+
+     // Doxygen documentation generator set
+    // 文件注释：版权信息模板
+    "doxdocgen.file.copyrightTag": [
+        "@copyright Copyright (c) {year}  miaow"
+    ],
+    // 文件注释：自定义模块，这里我添加一个修改日志
+    "doxdocgen.file.customTag": [
+        "@par Changelog:",
+        "<table>",
+        "<tr><th>Date       <th>Version <th>Author  <th>Description",
+        "<tr><td>{date} <td>1.0     <td>miaow     <td>内容",
+        "</table>",
+    ],
+    // 文件注释的组成及其排序
+    "doxdocgen.file.fileOrder": [
+        "file",		// @file
+        "brief",	// @brief 简介
+        "author",	// 作者
+        "version",	// 版本
+        "date",		// 日期
+        "empty",	// 空行
+        "copyright",// 版权
+        "empty",
+        "custom"	// 自定义
+    ],
+    // 下面时设置上面标签tag的具体信息
+    "doxdocgen.file.fileTemplate": "@file {name}",
+    "doxdocgen.file.versionTag": "@version 1.0",
+    "doxdocgen.generic.authorEmail": "3703781@qq.com",
+    "doxdocgen.generic.authorName": "miaow",
+    "doxdocgen.generic.authorTag": "@author {author} ({email})",
+    // 日期格式与模板
+    "doxdocgen.generic.dateFormat": "YYYY/MM/DD",
+    "doxdocgen.generic.dateTemplate": "@date {date}",
+	
+    // 根据自动生成的注释模板（目前主要体现在函数注释上）
+    "doxdocgen.generic.order": [
+        "brief",
+        "tparam",
+        "param",
+        "return"
+    ],
+    "doxdocgen.generic.paramTemplate": "@param {param}",
+    "doxdocgen.generic.returnTemplate": "@return {type} ",
+    "doxdocgen.generic.splitCasingSmartText": true
+}
+   
