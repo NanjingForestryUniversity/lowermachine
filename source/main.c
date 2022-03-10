@@ -12,11 +12,8 @@
  */
 typedef enum
 {
-    NOT_INITIALIZED = 0,
-    INITIALIZED = 1,
-    RUNNING = 2,
-    SLEEPING = 3,
-    STOPPED = 4
+    SLEEPING = 0,
+    RUNNING = 1,
 } status_enum_t;
 
 valvedata_t valvedata = {0};
@@ -25,11 +22,11 @@ queue_uint64_msg_t cmd_queue = {0};
 
 static int count_valve = 1, count_camera = 0, count_valve_should_be = 2;
 static uint64_t count_continues = 0UL, count_valve_continues = 0UL, count_camera_continues = 0UL;
-static status_enum_t status = NOT_INITIALIZED;
-static int camera_trigger_pulse_count = 0;
-static int valve_should_trigger_pulse_count = 0;
-static int valve_trigger_pulse_count = 0;
-static int camera_to_valve_pulse_count = 0;
+static status_enum_t status = SLEEPING;
+static int camera_trigger_pulse_count = 500;
+static int valve_should_trigger_pulse_count = 1;
+static int valve_trigger_pulse_count = 10;
+static int camera_to_valve_pulse_count = 3015;
 
 #define ROTATE_UINT64_RIGHT(x, n) ((x) >> (n)) | ((x) << ((64) - (n)))
 #define ROTATE_UINT64_LEFT(x, n) ((x) << (n)) | ((x) >> ((64) - (n)))
@@ -50,11 +47,15 @@ int main(int argc, char *argv[])
     // fflush(stdout);
     // valve_test3(100.0f);
     // valve_test2(200.0f, 0);
-    // valve_test(200.0f);
+    // for (int i = 0; i < 999; i++)
+    // {
+    //     valve_test(200.0f);
+    // }
     // printf("OK\r\n");
     // valve_deinit();
 
     hostcomputer_init(&data_queue, &cmd_queue);
+    printf("\r\n>>>>>\r\nstatus==SLEEPING\r\n<<<<<\r\n\r\n");
     uint64_t cmd;
     int TRUE = 1;
     while (TRUE)
@@ -62,12 +63,25 @@ int main(int argc, char *argv[])
         if (queue_uint64_get(&cmd_queue, &cmd) == 0)
         {
             process_cmd(&cmd);
-            usleep(100000);
         }
+        usleep(100000);
     }
     hostcomputer_deinit();
     queue_uint64_deinit(&data_queue);
     queue_uint64_deinit(&cmd_queue);
+
+    // encoder_init(on_encoder);
+    // sleep(100);
+    // encoder_deinit();
+
+    // cameratrigger_init();
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     sleep(1);
+    //     cameratrigger_trig();
+    // }
+    // cameratrigger_deinit();
+
     return 0;
 }
 
@@ -79,14 +93,16 @@ void process_cmd(uint64_t *cmd)
     {
         if (tmp_cmd == HOSTCOMPUTER_CMD_START)
         {
+            queue_uint64_clear(&data_queue);
             valve_should_trigger_pulse_count = camera_trigger_pulse_count / HOST_COMPUTER_PICTURE_ROW_NUM;
             for (int i = 0; i < camera_to_valve_pulse_count * HOST_COMPUTER_PICTURE_ROW_NUM / camera_trigger_pulse_count; i++)
-                queue_uint64_put(&data_queue, 0);
+                queue_uint64_put(&data_queue, 0L);
+
             valve_init();
             cameratrigger_init();
             encoder_init(on_encoder);
+            printf("\r\n>>>>>\r\nstatus==RUNNING\r\ncamera_trigger_pulse_count=%d\r\nvalve_trigger_pulse_count=%d\r\ncamera_to_valve_pulse_count=%d\r\n<<<<<\r\n\r\n", camera_trigger_pulse_count, valve_trigger_pulse_count, camera_to_valve_pulse_count);
             status = RUNNING;
-            printf("\r\n>>>>>\r\nstatus==RUNNING\r\n<<<<<\r\n\r\n");
         }
         else if (tmp_cmd == HOSTCOMPUTER_CMD_TEST)
         {
@@ -94,10 +110,7 @@ void process_cmd(uint64_t *cmd)
             valve_test(500.0f);
             valve_deinit();
         }
-    }
-    else if (status == NOT_INITIALIZED)
-    {
-        if (tmp_cmd == HOSTCOMPUTER_CMD_SETCAMERATRIGPULSECOUNT)
+        else if (tmp_cmd == HOSTCOMPUTER_CMD_SETCAMERATRIGPULSECOUNT)
         {
             camera_trigger_pulse_count = tmp_data;
         }
@@ -109,38 +122,6 @@ void process_cmd(uint64_t *cmd)
         {
             camera_to_valve_pulse_count = tmp_data;
         }
-        else if (tmp_cmd == HOSTCOMPUTER_CMD_TEST)
-        {
-            valve_init();
-            valve_test(500.0f);
-            valve_deinit();
-        }
-        if (camera_trigger_pulse_count != 0 && valve_trigger_pulse_count != 0 && camera_to_valve_pulse_count != 0)
-        {
-            status = INITIALIZED;
-            printf("\r\n>>>>>\r\nstatus==INITIALIZED\r\ncamera_trigger_pulse_count=%d\r\nvalve_trigger_pulse_count=%d\r\ncamera_to_valve_pulse_count=%d\r\n<<<<<\r\n\r\n", camera_trigger_pulse_count, valve_trigger_pulse_count, camera_to_valve_pulse_count);
-        }
-    }
-    else if (status == INITIALIZED)
-    {
-        if (tmp_cmd == HOSTCOMPUTER_CMD_START)
-        {
-            valve_should_trigger_pulse_count = camera_trigger_pulse_count / HOST_COMPUTER_PICTURE_ROW_NUM;
-            printf("valve_should_trigger_pulse_count=%d", valve_should_trigger_pulse_count);
-            for (int i = 0; i < camera_to_valve_pulse_count * HOST_COMPUTER_PICTURE_ROW_NUM / camera_trigger_pulse_count; i++)
-                queue_uint64_put(&data_queue, 0);
-            valve_init();
-            cameratrigger_init();
-            encoder_init(on_encoder);
-            status = RUNNING;
-            printf("\r\n>>>>>\r\nstatus==RUNNING\r\n<<<<<\r\n\r\n");
-        }
-        else if (tmp_cmd == HOSTCOMPUTER_CMD_TEST)
-        {
-            valve_init();
-            valve_test(500.0f);
-            valve_deinit();
-        }
     }
     else if (status == RUNNING)
     {
@@ -150,6 +131,12 @@ void process_cmd(uint64_t *cmd)
             cameratrigger_deinit();
             valve_deinit();
             queue_uint64_clear(&data_queue);
+            count_continues = 0UL;
+            count_valve_continues = 0UL;
+            count_camera_continues = 0UL;
+            count_valve = 1;
+            count_camera = 0;
+            count_valve_should_be = 2;
             status = SLEEPING;
             printf("\r\n>>>>>\r\nstatus==SLEEPING\r\n<<<<<\r\n\r\n");
         }
@@ -159,6 +146,7 @@ void process_cmd(uint64_t *cmd)
 void valve_test(float ms_for_each_channel)
 {
     uint64_t valve_data = 1ul;
+
     for (int i = 0; i < 48; i++)
     {
         usleep((useconds_t)(ms_for_each_channel * 500.0f));
