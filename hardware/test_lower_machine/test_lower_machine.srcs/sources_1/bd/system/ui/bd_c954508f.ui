@@ -1,0 +1,49 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"0.926657",
+   "Default View_TopLeft":"-156,-150",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
+#  -string -flagsOSRD
+preplace port DDR -pg 1 -lvl 5 -x 1620 -y 320 -defaultsOSRD
+preplace port FIXED_IO -pg 1 -lvl 5 -x 1620 -y 340 -defaultsOSRD
+preplace port port-id_encoder_signal -pg 1 -lvl 0 -x 0 -y 260 -defaultsOSRD
+preplace port port-id_out_signal_camera_0 -pg 1 -lvl 5 -x 1620 -y 520 -defaultsOSRD
+preplace portBus sen_0 -pg 1 -lvl 5 -x 1620 -y 120 -defaultsOSRD
+preplace portBus sclk_0 -pg 1 -lvl 5 -x 1620 -y 100 -defaultsOSRD
+preplace portBus sdata_0 -pg 1 -lvl 5 -x 1620 -y 140 -defaultsOSRD
+preplace inst processing_system7_0 -pg 1 -lvl 1 -x 230 -y 360 -defaultsOSRD
+preplace inst ps7_0_axi_periph -pg 1 -lvl 2 -x 640 -y 140 -defaultsOSRD
+preplace inst rst_ps7_0_200M -pg 1 -lvl 1 -x 230 -y 160 -defaultsOSRD
+preplace inst ip_encoder_0 -pg 1 -lvl 3 -x 1010 -y 430 -defaultsOSRD
+preplace inst ila_0 -pg 1 -lvl 4 -x 1410 -y 430 -defaultsOSRD
+preplace inst valve_interfaces_0 -pg 1 -lvl 4 -x 1410 -y 120 -defaultsOSRD
+preplace inst ip_fifo_0 -pg 1 -lvl 3 -x 1010 -y 160 -defaultsOSRD
+preplace netloc in_signal_0_1 1 0 3 NJ 260 470J 420 NJ
+preplace netloc ip_encoder_0_out_signal_camera 1 3 2 1230J 300 1590J
+preplace netloc ip_fifo_0_dout 1 3 1 1220 80n
+preplace netloc ip_fifo_0_empty 1 3 1 N 160
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 4 20 60 440 290 820 280 1240
+preplace netloc rst_ps7_0_200M_peripheral_aresetn 1 1 2 430 280 800
+preplace netloc valve_interfaces_0_sclk 1 4 1 NJ 100
+preplace netloc valve_interfaces_0_sdata 1 4 1 NJ 140
+preplace netloc valve_interfaces_0_sen 1 4 1 NJ 120
+preplace netloc ip_encoder_0_out_signal_valve_posedge 1 3 1 1210 140n
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 0 4 30 460 490 330 790J 40 1230J
+preplace netloc ip_encoder_0_out_signal_camera_posedge 1 2 2 830 520 1200
+preplace netloc ip_encoder_0_out_signal_valve 1 3 1 1190 420n
+preplace netloc processing_system7_0_DDR 1 1 4 460J 310 NJ 310 NJ 310 1600J
+preplace netloc processing_system7_0_FIXED_IO 1 1 4 480J 320 NJ 320 NJ 320 1580J
+preplace netloc processing_system7_0_M_AXI_GP0 1 1 1 450 60n
+preplace netloc ps7_0_axi_periph_M00_AXI 1 2 1 N 130
+preplace netloc ps7_0_axi_periph_M01_AXI 1 2 1 810 150n
+levelinfo -pg 1 0 230 640 1010 1410 1620
+pagesize -pg 1 -db -bbox -sgen -160 0 1820 540
+"
+}
+{
+   "da_axi4_cnt":"2",
+   "da_board_cnt":"1",
+   "da_clkrst_cnt":"2",
+   "da_ps7_cnt":"1"
+}
