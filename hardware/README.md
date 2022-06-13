@@ -1,1 +1,1 @@
-`b01-pcandysorting-thardcandy1`对应的硬件为周立功EPC9600开发板和对应的接口板，接口板是自己画的，接口板工程和说明待补充。
+`b01-pcandysorting-thardcandy1`对应的硬件为周立功EPC9600开发板和对应的接口板，接口板是自己画的，说明待补充。
