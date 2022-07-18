@@ -25,7 +25,7 @@
    $ cd ~/ps-linux/project-spec/meta-user/recipes-modules/fifo
    $ rz  # 上传source/linux_driver/fifo.c
    $ cd ~/ps-linux/project-spec/meta-user/recipes-modules/encoder
-$ rz  # 上传source/linux_driver/encoder.c
+   $ rz  # 上传source/linux_driver/encoder.c
    ```
 
 3. 上传xsa文件并config
@@ -46,7 +46,6 @@ $ rz  # 上传source/linux_driver/encoder.c
    # ├─Ethernet Settings
    # | ├─Randomise MAC address (不选)
    # | ├─Primary Ethernet (设为ps7_ethernet_0)
-   # | ├─Ethernet MAC address (设为00:0a:35:00:1e:53) 
    # | ├─Obtain IP address automatically (不选)
    # | ├─Static IP address (设为192.168.10.10)
    # | ├─Static IP netmask (设为255.255.255.0)
@@ -61,7 +60,7 @@ $ rz  # 上传source/linux_driver/encoder.c
    # └─Image Packaging Configuration
    #   ├─Root filesystem type (设为EXT4 (SD/eMMC/SATA/USB))
    #   ├─name for bootable kernel image (设为image.ub)
-   #   ├─Root filesystem formats (设为ext4 tar.gz)
+   #   ├─Root filesystem formats (设为tar.gz)
    #   └─Copy final images to tftpboot (不选)
    ```
 
@@ -170,14 +169,24 @@ $ rz  # 上传source/linux_driver/encoder.c
    # ├─devel
    # | └─lsof
    # |   └─lsof (勾选为星号)
+   # ├─libs
+   # | ├─ncurses
+   # | |  ├─ncurses (勾选为星号)
+   # | |  ├─ncurses-terminfo-base (勾选为星号)
+   # | |  ├─ncurses-tools (勾选为星号)
+   # | |  └─ncurses-terminfo (勾选为星号)
+   # | └─which
+   # |    └─which (勾选为星号)
    # ├─misc
-   # | └─perf
-   # |   └─perf (勾选为星号)
+   # | ├─perf
+   # | | └─perf (勾选为星号)
+   # | └─packagegroup-core-ssh-dropbear
+   # |   └─packagegroup-core-ssh-dropbear (不选)
    # Image Features
    # ├─imagefeature-ssh-server-dropbear (不选)
    # ├─imagefeature-ssh-server-openssh (勾选为星号)
    # ├─imagefeature-hwcodecs (勾选为星号)
-   # └─imagefeature-package-management (勾选为星号)
+   # ├─imagefeature-package-management (勾选为星号)
    # modules
    # ├─encoder (勾选为星号)
    # └─fifo (勾选为星号)
@@ -267,8 +276,9 @@ $ rz  # 上传source/linux_driver/encoder.c
    $ rz  # 上传encoder.ko
    $ mv fifo.ko encoder.ko /lib/modules/[内核版本]/kernel/drivers/
    $ cd /lib/modules/[内核版本]; depmod
-   $ echo "#!/bin/sh\nmodprobe fifo" > /etc/init.d/loadfifo.sh
-   $ echo "#!/bin/sh\nmodprobe encoder" > /etc/init.d/loadencoder.sh
+   $ set +H
+   $ echo -e "#!/bin/sh\nmodprobe fifo" > /etc/init.d/loadfifo.sh
+   $ echo -e "#!/bin/sh\nmodprobe encoder" > /etc/init.d/loadencoder.sh
    $ chmod 755 /etc/init.d/loadfifo.sh
    $ chmod 755 /etc/init.d/loadencoder.sh
    $ cd /etc/rc5.d 
@@ -283,7 +293,8 @@ $ rz  # 上传source/linux_driver/encoder.c
    ```shell
    $ cd ~; rz  # 上传target
    $ chmod 755 target
-   $ echo "#!/bin/sh\nif [ -x /home/root/target ]; then\n /home/root/target\nfi" > /etc/init.d/target.sh
+   $ set +H
+   $ echo -e "#!/bin/sh\nif [ -x /home/root/target ]; then\n /home/root/target\nfi" > /etc/init.d/target.sh
    $ chmod 755 /etc/init.d/target.sh
    $ cd /etc/rc5.d
    $ ln -s ../init.d/target.sh S99target.sh
@@ -303,9 +314,9 @@ $ rz  # 上传source/linux_driver/encoder.c
 
    ```shell
    $ cd ~; rz  # 上传ncurses-6.3.tar.gz
-   $ tar xzf /home/root/ncurses-6.3.tar.gz -C /usr/
+   $ tar xmzf /home/root/ncurses-6.3.tar.gz -C /usr/
    $ rz  # 上传htop.tar.gz
-   $ tar xzf /home/root/htop.tar.gz -C /usr/
+   $ tar xmzf /home/root/htop.tar.gz -C /usr/
    ```
 
 ### SD卡启动
