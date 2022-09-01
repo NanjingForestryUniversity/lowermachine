@@ -2,16 +2,17 @@
  * @file host_computer.c
  * @brief Commnunicate with host computer. Protocal is described in hostcomputer通信协议.md
  * @author miaow (3703781@qq.com)
- * @version 1.0
- * @date 2022/01/16
+ * @version 1.1
+ * @date 2022/08/06
  * @mainpage github.com/NanjingForestryUniversity
- * 
+ *
  * @copyright Copyright (c) 2022  miaow
- * 
+ *
  * @par Changelog:
  * <table>
  * <tr><th>Date       <th>Version <th>Author  <th>Description
  * <tr><td>2022/01/16 <td>1.0     <td>miaow     <td>Write this file
+ * <tr><td>2022/08/06 <td>1.1     <td>miaow     <td>Add fifob
  * </table>
  */
 #include <host_computer.h>
@@ -27,9 +28,7 @@
 #include <fcntl.h>
 #include <fifo_dev.h>
 #include <encoder_dev.h>
-
-#define HOST_COMPUTER_PICTURE_COLUMN_BYTES (HOST_COMPUTER_PICTURE_COLUMN_NUM / 8)
-#define HOST_COMPUTER_RAW_DATA_BYTES (HOST_COMPUTER_PICTURE_COLUMN_BYTES * HOST_COMPUTER_PICTURE_ROW_NUM)
+#include <data_filter.h>
 
 static char perror_buffer[128];
 /**
@@ -51,7 +50,7 @@ void *loop_thread_func(void *param);
  * @brief Pre initialize host computer module
  * @param data_q A pointer to the queue storing the valve data from host computer
  * @param cmd_q A pointer to the queue storing the cmd from host computer
- * @return 0 - success 
+ * @return 0 - success
  */
 int hostcomputer_init(queue_uint64_msg_t *cmd_q)
 {
@@ -61,6 +60,12 @@ int hostcomputer_init(queue_uint64_msg_t *cmd_q)
     pthread_create(&_global_structure.loop_thread, NULL, loop_thread_func, NULL);
 
     return 0;
+}
+
+static void send_error(int fd)
+{
+    write(fd, "error", 5);
+    printf("\r\nerror sent\r\n");
 }
 
 /**
@@ -111,13 +116,18 @@ static int is_connected(int sock_fd)
  */
 void *loop_thread_func(void *param)
 {
-    printf("loop thread in %s start\r\n", __FILE__);
-    int need_exit = 0;
+    // printf("loop thread in %s start\r\n", __FILE__);
+    int need_exit = 0, frame_count = 0, error_sent = 0;
+    int std_count, empty_packets_num = 0;
+    int empty_count_initial = 0;
+    int empty_count_processed = 0;
     char pre;
     uint16_t n_bytes;
     char type[2];
-    char data[HOST_COMPUTER_RAW_DATA_BYTES + 1];
+    char data[HOST_COMPUTER_PICTURE_BYTES + 1];
     char check[2];
+    datafilter_typedef datafilter;
+
     while (!need_exit)
     {
         pthread_mutex_lock(&_global_structure.loop_thread_mutex);
@@ -169,10 +179,10 @@ void *loop_thread_func(void *param)
             continue;
         }
         n_bytes = ntohs(n_bytes);
-        if (n_bytes != HOST_COMPUTER_RAW_DATA_BYTES + 2 && n_bytes > 10)
+        if (n_bytes != HOST_COMPUTER_PICTURE_BYTES + 2 && n_bytes > 10)
         {
             // close(_global_structure.socket_fd);
-            printf("n_bytes> 10 and n_bytes!=HOST_COMPUTER_RAW_DATA_BYTES + 2\r\n");
+            printf("n_bytes> 10 and n_bytes!=HOST_COMPUTER_PICTURE_BYTES + 2\r\n");
             continue;
         }
         if (recvn(_global_structure.socket_fd, (char *)type, 2) != 2)
@@ -212,17 +222,94 @@ void *loop_thread_func(void *param)
         // commands are reformed as an uint64_t, 0x--------xxxxxxxx, where `-` refers its paramter and `x` is HOSTCOMPUTER_CMD
         if (type[0] == 'd' && type[1] == 'a')
         {
-            // printf("%dbytes of data put to data queue\r\n", (int)n_bytes - 2);
-            if (n_bytes - 2 != HOST_COMPUTER_RAW_DATA_BYTES)
+            /*
+            int current_count = fifo_dev_get_count();
+            int current_count_filtered = datafilter_calculate(&datafilter_a, current_count);
+
+            if (++frame_count_a > HOST_COMPUTER_BEGINNING_PICTURES_IGNORE_NUM)
             {
-                printf("n_bytes-2!=%d\r\n", HOST_COMPUTER_RAW_DATA_BYTES);
+                fifo_dev_write_frame(data, 0);
+            }
+            int added_count = fifo_dev_get_count();
+            printf("before %d->after %d, diff %d, filter %d\r\n", current_count, added_count, added_count - current_count, current_count_filtered);
+            */
+            //=================================================
+            
+            int current_count, current_count_filtered, diff_count, empty_count_to_process;
+            if (n_bytes - 2 != HOST_COMPUTER_PICTURE_BYTES)
+            {
+                printf("n_bytes-2!=%d\r\n", HOST_COMPUTER_PICTURE_BYTES);
                 continue;
             }
-            fifo_dev_write_frame(data);
+            // get the item counts and its slide average value
+            current_count = fifo_dev_get_count();
+            current_count_filtered = datafilter_calculate(&datafilter, current_count);
+            frame_count++;
+            if (frame_count == HOST_COMPUTER_PICTURES_BEGINNING_IGNORE_NUM + 1)
+            {
+                empty_count_initial = fifo_dev_get_emptycount();
+            }
+            else if (frame_count == 100) // record the normal item counts in fifo
+            {
+                std_count = current_count_filtered;
+            }
+            if (frame_count > HOST_COMPUTER_PICTURES_BEGINNING_IGNORE_NUM)
+            {
+                // do nothing at first two frames, because that the first frame is set to zero and was concatenated to the delay frame before
+                // in case of late arrival of the first two frames.
+                empty_count_to_process = fifo_dev_get_emptycount() - empty_count_initial - empty_count_processed;
+                if (empty_count_to_process >= HOST_COMPUTER_PICTURE_ROW_NUM)
+                {
+                    empty_count_processed += HOST_COMPUTER_PICTURE_ROW_NUM;
+                }
+                else
+                {
+                    fifo_dev_write_frame(data, empty_count_to_process);
+                    empty_count_processed += empty_count_to_process;
+                }
+            }
+            if (current_count == 0)
+                empty_packets_num++;
+            else
+                empty_packets_num = 0;
+            
+            
+            // print fifo status
+            printf("a ||| %d | cnt %d | avgcnt %d | stdcnt %d",
+                   frame_count, current_count, current_count_filtered, std_count);
+            fflush(stdout);
+            // if (empty_count_to_process)
+                printf(" ||| initemp %d | toprc %d | prcd %d\r\n", empty_count_initial,
+                       empty_count_to_process, empty_count_processed);
+            // else
+                // printf("\r\n");
+            // if the item counts changes a lot compared with normal counts,
+            // meaning something goes wrong, a message will send to the hostcomputer
+            diff_count = current_count_filtered - std_count;
+            int diff_cond = diff_count > 250 || diff_count < -250;
+            int frame_count_cond = frame_count > 100;
+            int empty_packets_cond = empty_packets_num >= 5;
+
+            if (((frame_count_cond && diff_cond) || empty_packets_cond) && !error_sent)
+            {
+                error_sent = 1;
+                printf("\r\na ||| avgcnt %d | %d larger", current_count_filtered, diff_count);
+                fflush(stdout);
+                send_error(_global_structure.socket_fd);
+            }
         }
         else if (type[0] == 's' && type[1] == 't')
         {
             // printf("Start put to cmd queue, param:%d\r\n", (int)atoll(data));
+            frame_count = 0;
+            error_sent = 0;
+            empty_packets_num = 0;
+            std_count = 0;
+            datafilter_deinit(&datafilter);
+            datafilter_init(&datafilter, 20);
+            empty_count_processed = 0;
+            empty_count_initial = 0;
+
             queue_uint64_put(_global_structure.cmd_q, (atoll(data) << 32) | HOSTCOMPUTER_CMD_START);
         }
         else if (type[0] == 's' && type[1] == 'p')
@@ -255,14 +342,10 @@ void *loop_thread_func(void *param)
             // printf("Set valve pulse count put to cmd queue, param:%d\r\n", (int)atoll(data));
             queue_uint64_put(_global_structure.cmd_q, (atoll(data) << 32) | HOSTCOMPUTER_CMD_SETVALVETRIGPULSECOUNT);
         }
-        else if (type[0] == 's' && type[1] == 'd')
+        else if ((type[0] == 's' && type[1] == 'd'))
         {
             // printf("Set camera to valve pulse count put to cmd queue, param:%d\r\n", (int)atoll(data));
             queue_uint64_put(_global_structure.cmd_q, (atoll(data) << 32) | HOSTCOMPUTER_CMD_SETCAMERATOVALVEPULSECOUNT);
-        }
-        else
-        {
-            printf("Unknown command received");
         }
     }
     printf("loop thread in %s exit\r\n", __FILE__);
@@ -271,7 +354,7 @@ void *loop_thread_func(void *param)
 
 /**
  * @brief Deinitialize and release resources used by host computer module
- * @return int 
+ * @return int
  */
 int hostcomputer_deinit()
 {

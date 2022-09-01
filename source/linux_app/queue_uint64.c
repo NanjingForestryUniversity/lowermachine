@@ -7,9 +7,9 @@
  * @version 1.0
  * @date 2021/01/10
  * @mainpage github.com/NanjingForestryUniversity
- * 
+ *
  * @copyright Copyright (c) 2022  miaow
- * 
+ *
  * @par Changelog:
  * <table>
  * <tr><th>Date       <th>Version <th>Author  <th>Description
@@ -114,8 +114,11 @@ int queue_uint64_init(queue_uint64_msg_t *q, int max_count)
  */
 int queue_uint64_deinit(queue_uint64_msg_t *q)
 {
-    free(q->buffer);
-    q->buffer = NULL;
+    if (q->buffer != NULL)
+    {
+        free(q->buffer);
+        q->buffer = NULL;
+    }
     pthread_mutex_destroy(&q->_mux);
     // pthread_cond_destroy(&q->_cond_get);
     // pthread_cond_destroy(&q->_cond_put);

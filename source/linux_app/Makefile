@@ -1,4 +1,3 @@
-#makefile for file_ioctl
 CROSS_COMPILE ?= /home/miaow/software/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-
 TARGET := target
 BUILD_DIR := build

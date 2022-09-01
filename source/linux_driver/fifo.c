@@ -14,6 +14,7 @@
 #define FIFO_NAME "fifo" /* 名字 */
 #define FIFO_CMD_FUNCTION_CLEAR 1
 #define FIFO_CMD_FUNCTION_PADDING 2
+#define FIFO_CMD_GET_EMPTYCOUNT 3
 
 /*
  * 相关寄存器地址定义
@@ -35,22 +36,34 @@
 #define FIFO_REG_13_OFFSET 0x00000034
 #define FIFO_REG_14_OFFSET 0x00000038
 
+#define FIFO_CR_CLR_MASK ((u32)(1 << 1)) // 清空队列 (Clear) 对该位写入1，队列将清空，同时队列输出为全0。注意：不要写入除1以外的任何值。
+#define FIFO_CR_WS_MASK ((u32)(1 << 0)) // 写入同步 (Write Synchronization) 对该位写入1，FIFO_DATx的数据按字节小端序进入队列。 注意：不要写入除1以外的任何值。
+
+#define FIFO_SR_VLD_MASK ((u32)(1 << 16))  // 数据输出有效标志 (Valid) 0: 当前无有效输出，输出保持上一状态 1: 当前队列正在输出有效数据
+#define FIFO_SR_AMEM_MASK ((u32)(1 << 15)) // 队列将空标志 (Almost Empty) 0: 队列没有被读空 1: 队列在一个读时钟周期后会被读空
+#define FIFO_SR_EM_MASK ((u32)(1 << 14))  // 队列空标志 (Empty) 0: 队列中存在有效数据，没有被读空 1: 队列中已经没有有效数据
+#define FIFO_SR_AMFU_MASK ((u32)(1 << 13))  // 队列将满标志 (Almost Full) 0: 队列没有被写满 1: 队列在一个写时钟周期后会被写满
+#define FIFO_SR_FU_MASK ((u32)(1 << 12))  // 队列满标志 (Almost Full) 0: 队列中的有效数据小于FIFO数据深度 1: 队列中的有效数据达到FIFO数据深度
+#define FIFO_SR_CNT_MASK ((u32)(0xFFF << 0))  // 队列数据数量 (Data Count) 该值指示队列中的数据数量 注意：一个数据为384位宽
+
+#define FIFO_ECR_CNT_MASK ((u32)0xFFFFFFFF)  // 队列空读取累计次数
+
 /* 映射后的寄存器虚拟地址指针 */
-static void __iomem *fifo_reg_0_addr;
-static void __iomem *fifo_reg_1_addr;
-static void __iomem *fifo_reg_2_addr;
-static void __iomem *fifo_reg_3_addr;
-static void __iomem *fifo_reg_4_addr;
-static void __iomem *fifo_reg_5_addr;
-static void __iomem *fifo_reg_6_addr;
-static void __iomem *fifo_reg_7_addr;
-static void __iomem *fifo_reg_8_addr;
-static void __iomem *fifo_reg_9_addr;
-static void __iomem *fifo_reg_10_addr;
-static void __iomem *fifo_reg_11_addr;
-static void __iomem *fifo_reg_12_addr;
-static void __iomem *fifo_reg_13_addr;
-static void __iomem *fifo_reg_14_addr;
+static void __iomem *fifo_dat0_addr;
+static void __iomem *fifo_dat1_addr;
+static void __iomem *fifo_dat2_addr;
+static void __iomem *fifo_dat3_addr;
+static void __iomem *fifo_dat4_addr;
+static void __iomem *fifo_dat5_addr;
+static void __iomem *fifo_dat6_addr;
+static void __iomem *fifo_dat7_addr;
+static void __iomem *fifo_dat8_addr;
+static void __iomem *fifo_dat9_addr;
+static void __iomem *fifo_dat10_addr;
+static void __iomem *fifo_dat11_addr;
+static void __iomem *fifo_sr_addr;
+static void __iomem *fifo_ecr_addr;
+static void __iomem *fifo_cr_addr;
 
 /* fifo设备结构体 */
 struct fifo_dev
@@ -87,7 +100,7 @@ static int fifo_open(struct inode *inode, struct file *filp)
  */
 static ssize_t fifo_read(struct file *filp, char __user *buf, size_t cnt, loff_t *offt)
 {
-    u32 data = readl(fifo_reg_12_addr) & 0xFFF;
+    u32 data = readl(fifo_sr_addr) & FIFO_SR_CNT_MASK;
     copy_to_user(buf, &data, 4);
     return cnt;
 }
@@ -109,7 +122,7 @@ static ssize_t fifo_write(struct file *filp, const char __user *buf, size_t cnt,
     
     if (cnt % 32 != 0 || cnt > sizeof(kern_buf_u32))
     {
-        printk(KERN_ERR "cnt error, cnt=%d\r\n", cnt);
+        printk(KERN_ERR "cnt error, cnt=%d, sizeof=%d\r\n", cnt, (u32)sizeof(kern_buf_u32));
         return -1;
     }
 
@@ -122,19 +135,19 @@ static ssize_t fifo_write(struct file *filp, const char __user *buf, size_t cnt,
 
     for (i = 0; i < (cnt / sizeof(u32)); i += 8)
     {
-        writel(kern_buf_u32[i], fifo_reg_0_addr);
-        writel(kern_buf_u32[i + 1], fifo_reg_1_addr);
-        writel(kern_buf_u32[i + 2], fifo_reg_2_addr);
-        writel(kern_buf_u32[i + 3], fifo_reg_3_addr);
-        writel(kern_buf_u32[i + 4], fifo_reg_4_addr);
-        writel(kern_buf_u32[i + 5], fifo_reg_5_addr);
-        writel(kern_buf_u32[i + 6], fifo_reg_6_addr);
-        writel(kern_buf_u32[i + 7], fifo_reg_7_addr);
-        writel(0, fifo_reg_8_addr);
-        writel(0, fifo_reg_9_addr);
-        writel(0, fifo_reg_10_addr);
-        writel(0, fifo_reg_11_addr);
-        writel(1, fifo_reg_14_addr);
+        writel(kern_buf_u32[i], fifo_dat0_addr);
+        writel(kern_buf_u32[i + 1], fifo_dat1_addr);
+        writel(kern_buf_u32[i + 2], fifo_dat2_addr);
+        writel(kern_buf_u32[i + 3], fifo_dat3_addr);
+        writel(kern_buf_u32[i + 4], fifo_dat4_addr);
+        writel(kern_buf_u32[i + 5], fifo_dat5_addr);
+        writel(kern_buf_u32[i + 6], fifo_dat6_addr);
+        writel(kern_buf_u32[i + 7], fifo_dat7_addr);
+        writel(0, fifo_dat8_addr);
+        writel(0, fifo_dat9_addr);
+        writel(0, fifo_dat10_addr);
+        writel(0, fifo_dat11_addr);
+        writel(FIFO_CR_WS_MASK, fifo_cr_addr);
     }
 
     return cnt;
@@ -152,33 +165,45 @@ static int fifo_release(struct inode *inode, struct file *filp)
 
 static long fifo_ioctl(struct file *fp, unsigned int cmd, unsigned long tmp)
 {
-    if (_IOC_TYPE(cmd) != 'D' || _IOC_DIR(cmd) != _IOC_WRITE)
+    if (_IOC_TYPE(cmd) != 'D')
     {
         printk(KERN_ERR "IOC_TYPE or IOC_WRITE error: IOC_TYPE=%c, IOC_WRITE=%d\r\n", _IOC_TYPE(cmd), _IOC_DIR(cmd));
         return -EINVAL;
     }
-    if (_IOC_NR(cmd) == FIFO_CMD_FUNCTION_CLEAR)
+    if (_IOC_NR(cmd) == FIFO_CMD_GET_EMPTYCOUNT)
     {
-        writel(((u32)1 << 1), fifo_reg_14_addr);
+        u32 empty_count = readl(fifo_ecr_addr) & FIFO_ECR_CNT_MASK;
+        printk("%d\r\n", empty_count);
+        if (copy_to_user((u32 *)tmp, &empty_count, 4) < 0)
+        {
+            printk(KERN_ERR "get empty count error\r\n");
+            return -EINVAL;
+        }
+    }
+    else if (_IOC_NR(cmd) == FIFO_CMD_FUNCTION_CLEAR)
+    {
+		// 清空队列
+        writel(FIFO_CR_CLR_MASK, fifo_cr_addr);
     }
     else if (_IOC_NR(cmd) == FIFO_CMD_FUNCTION_PADDING)
     {
+		// 对队列中添加tmp个数的0元素
         int i;
         for (i = 0; i < tmp; i ++)
         {
-            writel((u32)0, fifo_reg_0_addr);
-            writel((u32)0, fifo_reg_1_addr);
-            writel((u32)0, fifo_reg_2_addr);
-            writel((u32)0, fifo_reg_3_addr);
-            writel((u32)0, fifo_reg_4_addr);
-            writel((u32)0, fifo_reg_5_addr);
-            writel((u32)0, fifo_reg_6_addr);
-            writel((u32)0, fifo_reg_7_addr);
-            writel((u32)0, fifo_reg_8_addr);
-            writel((u32)0, fifo_reg_9_addr);
-            writel((u32)0, fifo_reg_10_addr);
-            writel((u32)0, fifo_reg_11_addr);
-            writel((u32)1, fifo_reg_14_addr);
+            writel((u32)0, fifo_dat0_addr);
+            writel((u32)0, fifo_dat1_addr);
+            writel((u32)0, fifo_dat2_addr);
+            writel((u32)0, fifo_dat3_addr);
+            writel((u32)0, fifo_dat4_addr);
+            writel((u32)0, fifo_dat5_addr);
+            writel((u32)0, fifo_dat6_addr);
+            writel((u32)0, fifo_dat7_addr);
+            writel((u32)0, fifo_dat8_addr);
+            writel((u32)0, fifo_dat9_addr);
+            writel((u32)0, fifo_dat10_addr);
+            writel((u32)0, fifo_dat11_addr);
+            writel(FIFO_CR_WS_MASK, fifo_cr_addr);
         }
     }
     return 0;
@@ -198,21 +223,21 @@ static int __init fifo_init(void)
 {
     int ret;
     /* 寄存器地址映射 */
-    fifo_reg_0_addr = ioremap(FIFO_REG_BASE + FIFO_REG_0_OFFSET, 4);
-    fifo_reg_1_addr = ioremap(FIFO_REG_BASE + FIFO_REG_1_OFFSET, 4);
-    fifo_reg_2_addr = ioremap(FIFO_REG_BASE + FIFO_REG_2_OFFSET, 4);
-    fifo_reg_3_addr = ioremap(FIFO_REG_BASE + FIFO_REG_3_OFFSET, 4);
-    fifo_reg_4_addr = ioremap(FIFO_REG_BASE + FIFO_REG_4_OFFSET, 4);
-    fifo_reg_5_addr = ioremap(FIFO_REG_BASE + FIFO_REG_5_OFFSET, 4);
-    fifo_reg_6_addr = ioremap(FIFO_REG_BASE + FIFO_REG_6_OFFSET, 4);
-    fifo_reg_7_addr = ioremap(FIFO_REG_BASE + FIFO_REG_7_OFFSET, 4);
-    fifo_reg_8_addr = ioremap(FIFO_REG_BASE + FIFO_REG_8_OFFSET, 4);
-    fifo_reg_9_addr = ioremap(FIFO_REG_BASE + FIFO_REG_9_OFFSET, 4);
-    fifo_reg_10_addr = ioremap(FIFO_REG_BASE + FIFO_REG_10_OFFSET, 4);
-    fifo_reg_11_addr = ioremap(FIFO_REG_BASE + FIFO_REG_11_OFFSET, 4);
-    fifo_reg_12_addr = ioremap(FIFO_REG_BASE + FIFO_REG_12_OFFSET, 4);
-    fifo_reg_13_addr = ioremap(FIFO_REG_BASE + FIFO_REG_13_OFFSET, 4);
-    fifo_reg_14_addr = ioremap(FIFO_REG_BASE + FIFO_REG_14_OFFSET, 4);
+    fifo_dat0_addr = ioremap(FIFO_REG_BASE + FIFO_REG_0_OFFSET, 4);
+    fifo_dat1_addr = ioremap(FIFO_REG_BASE + FIFO_REG_1_OFFSET, 4);
+    fifo_dat2_addr = ioremap(FIFO_REG_BASE + FIFO_REG_2_OFFSET, 4);
+    fifo_dat3_addr = ioremap(FIFO_REG_BASE + FIFO_REG_3_OFFSET, 4);
+    fifo_dat4_addr = ioremap(FIFO_REG_BASE + FIFO_REG_4_OFFSET, 4);
+    fifo_dat5_addr = ioremap(FIFO_REG_BASE + FIFO_REG_5_OFFSET, 4);
+    fifo_dat6_addr = ioremap(FIFO_REG_BASE + FIFO_REG_6_OFFSET, 4);
+    fifo_dat7_addr = ioremap(FIFO_REG_BASE + FIFO_REG_7_OFFSET, 4);
+    fifo_dat8_addr = ioremap(FIFO_REG_BASE + FIFO_REG_8_OFFSET, 4);
+    fifo_dat9_addr = ioremap(FIFO_REG_BASE + FIFO_REG_9_OFFSET, 4);
+    fifo_dat10_addr = ioremap(FIFO_REG_BASE + FIFO_REG_10_OFFSET, 4);
+    fifo_dat11_addr = ioremap(FIFO_REG_BASE + FIFO_REG_11_OFFSET, 4);
+    fifo_sr_addr = ioremap(FIFO_REG_BASE + FIFO_REG_12_OFFSET, 4);
+    fifo_ecr_addr = ioremap(FIFO_REG_BASE + FIFO_REG_13_OFFSET, 4);
+    fifo_cr_addr = ioremap(FIFO_REG_BASE + FIFO_REG_14_OFFSET, 4);
 
     /* 注册字符设备驱动 */
     //(1)创建设备号
@@ -269,21 +294,21 @@ FAIL_ADD_CDEV:
     unregister_chrdev_region(fifo.devid, FIFO_CNT);
 
 FAIL_REGISTER_CHR_DEV:
-    iounmap(fifo_reg_0_addr);
-    iounmap(fifo_reg_1_addr);
-    iounmap(fifo_reg_2_addr);
-    iounmap(fifo_reg_3_addr);
-    iounmap(fifo_reg_4_addr);
-    iounmap(fifo_reg_5_addr);
-    iounmap(fifo_reg_6_addr);
-    iounmap(fifo_reg_7_addr);
-    iounmap(fifo_reg_8_addr);
-    iounmap(fifo_reg_9_addr);
-    iounmap(fifo_reg_10_addr);
-    iounmap(fifo_reg_11_addr);
-    iounmap(fifo_reg_12_addr);
-    iounmap(fifo_reg_13_addr);
-    iounmap(fifo_reg_14_addr);
+    iounmap(fifo_dat0_addr);
+    iounmap(fifo_dat1_addr);
+    iounmap(fifo_dat2_addr);
+    iounmap(fifo_dat3_addr);
+    iounmap(fifo_dat4_addr);
+    iounmap(fifo_dat5_addr);
+    iounmap(fifo_dat6_addr);
+    iounmap(fifo_dat7_addr);
+    iounmap(fifo_dat8_addr);
+    iounmap(fifo_dat9_addr);
+    iounmap(fifo_dat10_addr);
+    iounmap(fifo_dat11_addr);
+    iounmap(fifo_sr_addr);
+    iounmap(fifo_ecr_addr);
+    iounmap(fifo_cr_addr);
 
     return ret;
 }
@@ -304,21 +329,21 @@ static void __exit fifo_exit(void)
     unregister_chrdev_region(fifo.devid, FIFO_CNT);
 
     //(5)取消内存映射
-    iounmap(fifo_reg_0_addr);
-    iounmap(fifo_reg_1_addr);
-    iounmap(fifo_reg_2_addr);
-    iounmap(fifo_reg_3_addr);
-    iounmap(fifo_reg_4_addr);
-    iounmap(fifo_reg_5_addr);
-    iounmap(fifo_reg_6_addr);
-    iounmap(fifo_reg_7_addr);
-    iounmap(fifo_reg_8_addr);
-    iounmap(fifo_reg_9_addr);
-    iounmap(fifo_reg_10_addr);
-    iounmap(fifo_reg_11_addr);
-    iounmap(fifo_reg_12_addr);
-    iounmap(fifo_reg_13_addr);
-    iounmap(fifo_reg_14_addr);
+    iounmap(fifo_dat0_addr);
+    iounmap(fifo_dat1_addr);
+    iounmap(fifo_dat2_addr);
+    iounmap(fifo_dat3_addr);
+    iounmap(fifo_dat4_addr);
+    iounmap(fifo_dat5_addr);
+    iounmap(fifo_dat6_addr);
+    iounmap(fifo_dat7_addr);
+    iounmap(fifo_dat8_addr);
+    iounmap(fifo_dat9_addr);
+    iounmap(fifo_dat10_addr);
+    iounmap(fifo_dat11_addr);
+    iounmap(fifo_sr_addr);
+    iounmap(fifo_ecr_addr);
+    iounmap(fifo_cr_addr);
 }
 
 /* 驱动模块入口和出口函数注册 */
