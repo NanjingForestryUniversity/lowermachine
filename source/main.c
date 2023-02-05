@@ -208,7 +208,7 @@ void on_encoder()
 
         // printf("data:%llx send to valve, queue length is %d\r\n", valvedata.valvedata_1, data_queue.nData);
         // printf("%016llx ", valvedata.valvedata_1);
-        fflush(stdout);
+        // fflush(stdout);
     }
 
     if (++count_valve_should_be == valve_should_trigger_pulse_count + 2)
