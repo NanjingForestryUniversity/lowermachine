@@ -1,9 +1,9 @@
 /**
  * @file host_computer.c
- * @brief Commnunicate with host computer. Protocal is described in hostcomputer通信协议.md
+ * @brief Commnunicate with host computer. Protocal is described in 下位机和上位机通信协议.md
  * @author miaow (3703781@qq.com)
- * @version 1.0
- * @date 2022/01/16
+ * @version 1.1
+ * @date 2023/02/08
  * 
  * @copyright Copyright (c) 2022  miaow
  * 
@@ -11,6 +11,7 @@
  * <table>
  * <tr><th>Date       <th>Version <th>Author  <th>Description
  * <tr><td>2022/01/16 <td>1.0     <td>miaow     <td>Write this file
+ * <tr><td>2023/02/08 <td>1.1     <td>miaow     <td>Add fifo empty detection
  * </table>
  */
 #include <host_computer.h>
@@ -85,6 +86,16 @@ static int recvn(int fd, char *buf, int size)
 }
 
 /**
+ * @brief Send string "error"
+ * @param fd The file descriptor that receives error
+ */
+static void send_error(int fd)
+{
+    write(fd, "error", 5);
+    printf("error sent\r\n");
+}
+
+/**
  * @brief To inspect the status of TCP connection
  * @param sock_fd The socket
  * @return 0 - Not connected, 1 - connected
@@ -105,7 +116,7 @@ static int is_connected(int sock_fd)
 void *loop_thread_func(void *param)
 {
     printf("loop thread in %s start\r\n", __FILE__);
-    int need_exit = 0;
+    int need_exit = 0, error_sent = 0;
     char pre;
     uint16_t n_bytes;
     char type[2];
@@ -143,39 +154,32 @@ void *loop_thread_func(void *param)
 
         if (recvn(_global_structure.socket_fd, (char *)&pre, 1) > 1)
         {
-            // close(_global_structure.socket_fd);
             printf("pre_len!=1\r\n");
             continue;
         }
         if (pre != 0xAA)
         {
-            // close(_global_structure.socket_fd);
-            // printf("%X ", (int)pre);
             fflush(stdout);
             continue;
         }
         if (recvn(_global_structure.socket_fd, (char *)&n_bytes, 2) != 2)
         {
-            // close(_global_structure.socket_fd);
             printf("n_bytes_len!=2\r\n");
             continue;
         }
         n_bytes = ntohs(n_bytes);
         if (n_bytes > 4096 || n_bytes < 2)
         {
-            // close(_global_structure.socket_fd);
             printf("n_bytes>4096 or n_bytes<2\r\n");
             continue;
         }
         if (recvn(_global_structure.socket_fd, (char *)type, 2) != 2)
         {
-            // close(_global_structure.socket_fd);
             printf("type!=2\r\n");
             continue;
         }
         if (recvn(_global_structure.socket_fd, (char *)data, n_bytes - 2) != n_bytes - 2)
         {
-            // close(_global_structure.socket_fd);
             printf("data_len!=n_bytes-2\r\n");
             continue;
         }
@@ -183,19 +187,16 @@ void *loop_thread_func(void *param)
         data[n_bytes - 2] = 0;
         if (recvn(_global_structure.socket_fd, (char *)check, 2) != 2)
         {
-            // close(_global_structure.socket_fd);
             printf("check_len!=2\r\n");
             continue;
         }
         if (recvn(_global_structure.socket_fd, (char *)&pre, 1) != 1)
         {
-            // close(_global_structure.socket_fd);
             printf("end_len!=1\r\n");
             continue;
         }
         if (pre != 0xBB)
         {
-            // close(_global_structure.socket_fd);
             printf("end!=0xBB\r\n");
             continue;
         }
@@ -205,9 +206,9 @@ void *loop_thread_func(void *param)
         if (type[0] == 'd' && type[1] == 'a')
         {
             // printf("%dbytes of data put to data queue\r\n", (int)n_bytes - 2);
-            if (n_bytes - 2 != 6 * HOST_COMPUTER_PICTURE_ROW_NUM)
+            if (n_bytes - 2 != HOST_COMPUTER_PICTURE_BYTES)
             {
-                printf("n_bytes-2!=%d\r\n", 6 * HOST_COMPUTER_PICTURE_ROW_NUM);
+                printf("n_bytes-2!=%d\r\n", HOST_COMPUTER_PICTURE_BYTES);
                 continue;
             }
             int data_index = 0;
@@ -220,17 +221,24 @@ void *loop_thread_func(void *param)
             for (int i = 0; i < HOST_COMPUTER_PICTURE_ROW_NUM; i++)
             {
                 tmp_one_line_data = 0ul;
-                for (int j = 0; j < 6; j++)
+                for (int j = 0; j < HOST_COMPUTER_PICTURE_COLUMN_BYTES; j++)
                 {
                     tmp_one_line_data <<= 8;
                     tmp_one_line_data |= data[data_index++];
                 }
                 queue_uint64_put(_global_structure.data_q, tmp_one_line_data);
             }
+            // printf("queue_num=%d\r\n", _global_structure.data_q->nData);
+            if (_global_structure.data_q->nData == HOST_COMPUTER_PICTURE_ROW_NUM  && !error_sent)
+            {
+                error_sent = 1;
+                send_error(_global_structure.socket_fd);
+            }
         }
         else if (type[0] == 's' && type[1] == 't')
         {
             // printf("Start put to cmd queue, param:%d\r\n", (int)atoll(data));
+            error_sent = 0;
             queue_uint64_put(_global_structure.cmd_q, (atoll(data) << 32) | HOSTCOMPUTER_CMD_START);
         }
         else if (type[0] == 's' && type[1] == 'p')

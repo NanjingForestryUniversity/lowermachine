@@ -1,3 +1,14 @@
+/**
+ * @file gpio_common.h
+ * @brief Operate the GPIO port of Zhou Ligong linux industrial control board
+ * @details is_file_exist(const char *file_path) determine whether the specified file exists
+ *          print_array(int *array, int count) used to print out the value of the queue buffer, easy to debug and use
+ * @mainpage github.com/NanjingForestryUniversity
+ * @author miaow
+ * @email 3703781@qq.com
+ * @version v0.9.0
+ * @date 2021/12/25 merry christmas
+ */
 #ifndef __GPIO_COMMON_H
 #define __GPIO_COMMON_H
 

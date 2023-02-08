@@ -1,9 +1,9 @@
 /**
  * @file host_computer.h
- * @brief Commnunicate with host computer. Protocal is described in hostcomputer通信协议.md
+ * @brief Commnunicate with host computer. Protocal is described in 下位机和上位机通信协议.md
  * @author miaow (3703781@qq.com)
- * @version 1.0
- * @date 2022/01/16
+ * @version 1.1
+ * @date 2023/02/08
  * 
  * @copyright Copyright (c) 2022  miaow
  * 
@@ -11,6 +11,7 @@
  * <table>
  * <tr><th>Date       <th>Version <th>Author  <th>Description
  * <tr><td>2022/01/16 <td>1.0     <td>miaow     <td>Write this file
+ * <tr><td>2023/02/08 <td>1.1     <td>miaow     <td>Add 3 macros for picture from host computer
  * </table>
  */
 #ifndef __HOST_COMPUTER_H
@@ -23,6 +24,9 @@
 #define HOST_COMPUTER_IP "192.168.2.10"
 #define HOST_COMPUTER_PORT 13452
 #define HOST_COMPUTER_PICTURE_ROW_NUM 500
+#define HOST_COMPUTER_PICTURE_COLUMN_NUM 48
+#define HOST_COMPUTER_PICTURE_COLUMN_BYTES (HOST_COMPUTER_PICTURE_COLUMN_NUM / 8)
+#define HOST_COMPUTER_PICTURE_BYTES (HOST_COMPUTER_PICTURE_COLUMN_BYTES * HOST_COMPUTER_PICTURE_ROW_NUM)
 
 /**
  * @brief The commonds, ref hostcomputer通信协议.md

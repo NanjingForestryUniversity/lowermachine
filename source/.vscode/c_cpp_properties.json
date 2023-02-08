@@ -4,10 +4,10 @@
             "name": "ARM",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/miaow/software/arm-2011.03/lib/gcc/arm-none-linux-gnueabi/4.5.2/include/**"
+                "/home/miaow/software/gcc-arm-2011.03/lib/gcc/arm-none-linux-gnueabi/4.5.2/include/**"
             ],
             "defines": [],
-            "compilerPath": "/home/miaow/software/arm-2011.03/bin/arm-none-linux-gnueabi-gcc",
+            "compilerPath": "/home/miaow/software/gcc-arm-2011.03/bin/arm-none-linux-gnueabi-gcc",
             "cStandard": "gnu99",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-arm",
@@ -15,7 +15,7 @@
             "browse": {
                 "path": [
                     "${workspaceFolder}",
-                    "/home/miaow/software/arm-2011.03/lib/gcc/arm-none-linux-gnueabi/4.5.2/include"
+                    "/home/miaow/software/gcc-arm-2011.03/lib/gcc/arm-none-linux-gnueabi/4.5.2/include"
                 ]
             }
         }

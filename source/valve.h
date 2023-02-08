@@ -1,18 +1,28 @@
+/**
+ * @file valve.h
+ * @brief Operate the valveboard with Linux application
+ * @details Call valve_init() paired with valve_deinit() as their names imply, valve_send() can be executed several times to operate up to 6 valveboards between valve_init() and valve_deinit()
+ * @mainpage github.com/NanjingForestryUniversity
+ * @author miaow
+ * @email 3703781@qq.com
+ * @version v0.9.0
+ * @date 2021/12/25 merry christmas
+ */
 #ifndef __VALVE_INIT_H
 #define __VALVE_INIT_H
 #include <gpio_common.h>
 
 typedef enum
 {
-    VALVE_SEN=GPIO_PINDEF_TO_INDEX(GPO1),
-    VALVE_SCLK=GPIO_PINDEF_TO_INDEX(GPO2),
-    VALVE_SDATA_1=GPIO_PINDEF_TO_INDEX(GPO0),
-    VALVE_SDATA_2=GPIO_PINDEF_TO_INDEX(GPO3),
-    VALVE_SDATA_3=GPIO_PINDEF_TO_INDEX(GPO4),
-    VALVE_SDATA_4=GPIO_PINDEF_TO_INDEX(GPO5),
-    VALVE_SDATA_5=GPIO_PINDEF_TO_INDEX(GPO6),
-    VALVE_SDATA_6=GPIO_PINDEF_TO_INDEX(GPO7)
-}valve_pin_enum_t;
+    VALVE_SEN = GPIO_PINDEF_TO_INDEX(GPO1),
+    VALVE_SCLK = GPIO_PINDEF_TO_INDEX(GPO2),
+    VALVE_SDATA_1 = GPIO_PINDEF_TO_INDEX(GPO0),
+    VALVE_SDATA_2 = GPIO_PINDEF_TO_INDEX(GPO3),
+    VALVE_SDATA_3 = GPIO_PINDEF_TO_INDEX(GPO4),
+    VALVE_SDATA_4 = GPIO_PINDEF_TO_INDEX(GPO5),
+    VALVE_SDATA_5 = GPIO_PINDEF_TO_INDEX(GPO6),
+    VALVE_SDATA_6 = GPIO_PINDEF_TO_INDEX(GPO7)
+} valve_pin_enum_t;
 
 typedef struct
 {
@@ -24,12 +34,11 @@ typedef struct
     uint64_t valvedata_6;
 } valvedata_t;
 
-
 #define SCLK_FREQUENCE_KHZ 10000
 
 int valve_init(void);
-int valve_send(uint64_t* valve_data);
+int valve_send(uint64_t *valve_data);
 int valve_deinit(void);
-int valve_sendmsg(valvedata_t* valve_data);
+int valve_sendmsg(valvedata_t *valve_data);
 
 #endif

@@ -1,5 +1,5 @@
 #makefile for file_ioctl
-CROSS_COMPILE ?= /home/miaow/software/arm-2011.03/bin/arm-none-linux-gnueabi-
+CROSS_COMPILE ?= /home/miaow/software/gcc-arm-2011.03/bin/arm-none-linux-gnueabi-
 TARGET := target
 BUILD_DIR := build
 

@@ -16,7 +16,9 @@
         "queue.h": "c",
         "stdio.h": "c",
         "encoder.h": "c",
-        "semaphore.h": "c"
+        "semaphore.h": "c",
+        "socket.h": "c",
+        "host_computer.h": "c"
     },
     "makefile.launchConfigurations": [
         {
