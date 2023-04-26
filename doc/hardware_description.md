@@ -2,7 +2,7 @@
 
 PL端主要由4个外设组成，分别时**风扇控制器**(FAN)，**编码和分频控制器**(ENCODER)，**先入先出队列**(FIFO)，**阀板控制器**(VALVE)。其中阀板控制器没有提供AXI接口，因此并没有映射寄存器，软件也无法进行控制。各个控制器的连接关系如下图所示。
 
-![2](hardware_description.assets/system_arch.png)
+![2](hardware_description.assets/system_arch.jpg)
 
 由于开发板的PL端没有自带晶振，所以4个外设由统一的同步时钟驱动，时钟源来自PS端，为200MHz，软件不可修改。外部编码器信号输入**编码和分频控制器**，控制器根据软件设置的阀触发分频值和相机触发分频值对编码器信号进行分频，分频后的信号用于驱动喷阀动作和触发相机拍照。上位机的识别结果存储到**先入先出队列**中。
 
@@ -31,14 +31,15 @@ ARM核上还开启AXI GP0接口与PL通信
 
 ## ENCODER模块
 
-encoder模块主要接口为in_signal、out_signal_camera_a_posedge、out_signal_camera_b_posedge、out_signal_camera_c_posedge、out_signal_camera_d_posedge、out_signal_valve_posedge、out_signal_camera_a、out_signal_camera_b、out_signal_camera_c、out_signal_camera_d、out_signal_valve
+encoder模块主要接口为in_signal、out_signal_camera_a_posedge、out_signal_camera_b_posedge、out_signal_camera_c_posedge、out_signal_camera_d_posedge、out_signal_valve_posedge、out_signal_camera_a、out_signal_camera_b、out_signal_camera_c、out_signal_camera_d、out_signal_valve、exrst_n
 
-终于，我们重新实现了被老倪乱起八糟的需求搞的几乎奔溃的模块
+终于，我们重新实现了被老倪乱起八糟的需求搞的几乎奔溃的模块，现在这个模块已经比较简洁了
 
 1. in_signal接口与外部编码器相连，接收外部编码器信号
 2. out_signal_camera_a到d最多课用于触发共4个相机
 3. out_signal_camera_posedge_a到d为上述信号的上升沿，其中out_signal_camera_posedge_a控制FIFO的读出
-5. out_signal_valve_posedge为out_signal_valve的上升沿，驱动**阀板控制器**动作
+4. out_signal_valve_posedge为out_signal_valve的上升沿，驱动**阀板控制器**动作
+5. exrst_n为可选的外部复位清零信号，可用于连接物体传感器，根据需要屏蔽相机触发输出
 
 
 ENCODER模块输入输出频率的详细计算方式和寄存器说明见[doc/pl_reference_mannual.md](pl_reference_mannual.md)中的ENCODER控制器部分

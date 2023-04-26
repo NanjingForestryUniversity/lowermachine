@@ -18,6 +18,9 @@
 #define ENCODER_CMD_INPUT_MODE_EXTERNEL 100
 #define ENCODER_CMD_INPUT_MODE_INTERNEL 101
 
+#define ENCODER_CMD_CLEAR_MODE_BOTH 200
+#define ENCODER_CMD_CLEAR_MODE_INTERNAL 201
+
 /*
  * 相关寄存器地址定义
  */
@@ -31,6 +34,7 @@
 #define ENCODER_REG_6_OFFSET 0x00000018
 #define ENCODER_REG_7_OFFSET 0x0000001C
 
+#define ENCODER_CR_ICO_MASK ((u32)(1 << 3)) // 仅限内部清除缓存 (Iternal Clear Only) 0: 允许外部输入和CLR位共同控制清除缓存，1： 仅允许CLR位清除缓存
 #define ENCODER_CR_VTS_MASK ((u32)(1 << 2)) // 内部触发信号 (Virtual Triggle Signal) MOD位置1时，由上位机软件写入，将该位信号作为触发信号
 #define ENCODER_CR_MOD_MASK ((u32)(1 << 1)) // 模式选择 (Mode) 0: 外部触发模式，外部触发编码器转动, 1: 内部触发模式，上位机软件模拟触发信号
 #define ENCODER_CR_CLR_MASK ((u32)(1 << 0)) // 清除缓存 (Clear) 清除编码和分频控制器内部的分频计数值，不影响VDIV和CDIV
@@ -72,6 +76,8 @@ static struct encoder_dev encoder;
  */
 static int encoder_open(struct inode *inode, struct file *filp)
 {
+    u32 data = readl(encoder_cr_addr);
+    writel(data & ~ENCODER_CR_CLR_MASK, encoder_cr_addr);
     return 0;
 }
 
@@ -95,7 +101,7 @@ static ssize_t encoder_write(struct file *filp, const char __user *buf, size_t c
         .camera_c_divide_value = 0,
         .camera_d_divide_value = 0,
     };
-     if (cnt != sizeof(kern_buf))
+    if (cnt != sizeof(kern_buf))
     {
         printk(KERN_ERR "encoder write: cnt error, cnt=%d", cnt);
         return -EFAULT;
@@ -107,11 +113,10 @@ static ssize_t encoder_write(struct file *filp, const char __user *buf, size_t c
         return -EFAULT;
     }
     // 最小分频值为2
-    if (kern_buf.valve_divide_value < 2 || kern_buf.camera_a_divide_value < 2 || 
-    kern_buf.camera_b_divide_value < 2 || kern_buf.camera_c_divide_value < 2 ||
-    kern_buf.camera_d_divide_value < 2)
+    if (kern_buf.valve_divide_value < 2 || kern_buf.camera_a_divide_value < 2 ||
+        kern_buf.camera_b_divide_value < 2 || kern_buf.camera_c_divide_value < 2 ||
+        kern_buf.camera_d_divide_value < 2)
         return -EFAULT;
-    
 
     // 写入0后清除ENCODER内部计数器缓存清除
     data = readl(encoder_cr_addr);
@@ -136,6 +141,8 @@ static ssize_t encoder_write(struct file *filp, const char __user *buf, size_t c
  */
 static int encoder_release(struct inode *inode, struct file *filp)
 {
+    u32 data = readl(encoder_cr_addr);
+    writel(data | ENCODER_CR_CLR_MASK, encoder_cr_addr);
     return 0;
 }
 
@@ -162,14 +169,14 @@ static long encoder_ioctl(struct file *fp, unsigned int cmd, unsigned long tmp)
     else if (cmd_parsed == ENCODER_CMD_INPUT_MODE_INTERNEL)
     {
         // 设为内部触发模式
-        writel(data | (u32)(1 << 1), encoder_cr_addr);
+        writel(data | ENCODER_CR_MOD_MASK, encoder_cr_addr);
     }
     else if (cmd_parsed == ENCODER_CMD_FUNCTION_VIRT_INPUT)
     {
         int i;
         // 虚拟触发，tmp为周期数
         // 1. 设为内部触发模式
-        writel(data | (u32)(1 << 1), encoder_cr_addr);
+        writel(data | ENCODER_CR_MOD_MASK, encoder_cr_addr);
 
         // 2. 产生虚拟的高低电平
         for (i = 0; i < tmp; i++)
@@ -181,7 +188,16 @@ static long encoder_ioctl(struct file *fp, unsigned int cmd, unsigned long tmp)
         // 3. 恢复为原来的状态和模式
         writel(data, encoder_cr_addr);
     }
-
+    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_INTERNAL)
+    {
+        // 设为允许内部和外部信号清除缓存
+        writel(data & ~ENCODER_CR_ICO_MASK, encoder_cr_addr);
+    }
+    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_BOTH)
+    {
+        // 设为仅允许内部清除缓存
+        writel(data | ENCODER_CR_ICO_MASK, encoder_cr_addr);
+    }
     return 0;
 }
 
@@ -205,7 +221,6 @@ static int __init encoder_init(void)
     encoder_cdivrb_addr = ioremap(ENCODER_REG_BASE + ENCODER_REG_3_OFFSET, 4);
     encoder_cdivrc_addr = ioremap(ENCODER_REG_BASE + ENCODER_REG_4_OFFSET, 4);
     encoder_cdivrd_addr = ioremap(ENCODER_REG_BASE + ENCODER_REG_5_OFFSET, 4);
-
 
     // 创建设备号
     if (encoder.major)
@@ -253,10 +268,10 @@ static int __init encoder_init(void)
     data = readl(encoder_cr_addr);
     writel(data & ~ENCODER_CR_CLR_MASK, encoder_cr_addr); // 清除硬件计数器缓存
     writel(1000, encoder_vdivr_addr);                     // 设置阀触发分频
-    writel(1000, encoder_cdivra_addr);                     // 设置相机a触发分频
-    writel(1000, encoder_cdivrb_addr);                     // 设置相机b触发分频
-    writel(1000, encoder_cdivrc_addr);                     // 设置相机c触发分频
-    writel(1000, encoder_cdivrd_addr);                     // 设置相机d触发分频
+    writel(1000, encoder_cdivra_addr);                    // 设置相机a触发分频
+    writel(1000, encoder_cdivrb_addr);                    // 设置相机b触发分频
+    writel(1000, encoder_cdivrc_addr);                    // 设置相机c触发分频
+    writel(1000, encoder_cdivrd_addr);                    // 设置相机d触发分频
     writel(data | ENCODER_CR_CLR_MASK, encoder_cr_addr);  // 清除完毕
     return 0;
 

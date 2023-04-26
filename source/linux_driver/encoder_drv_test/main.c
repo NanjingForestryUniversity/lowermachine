@@ -12,13 +12,28 @@ int main(int argc, char *argv[])
     unsigned int a = 100, b = 100, c = 100, d = 100;
     unsigned int divider = 0;
     char which[32] = {0};
+    char clear_mode[32] = {0};
     encoder_dev_init();
     encoder_dev_set_trigmod(ENCODER_TRIG_MODE_EXTERNEL);
-    encoder_dev_set_divide(500, 200, 100, 500, 50);
+    encoder_dev_set_divide(100, 100, 100, 100, 100);
     signal(SIGINT, (sig_t)sig_handler);
     while (1)
     {
-
+        while (strcmp(clear_mode, "i") && strcmp(clear_mode, "ei"))
+        {
+            printf("clear mode(i/ei)? ");
+            scanf("%s", clear_mode);
+        }
+        
+        if (strcmp(clear_mode, "i"))
+        {
+            encoder_dev_set_clrmod(ENCODER_CLEAR_MODE_INTERNAL);
+        }     
+        else
+        {
+            encoder_dev_set_clrmod(ENCODER_CLEAR_MODE_BOTH);
+        }
+        
         while (strcmp(which, "a") && strcmp(which, "b") && strcmp(which, "c") && strcmp(which, "d") && strcmp(which, "all"))
         {
             printf("which camera(a/b/c/d/all)? ");
@@ -48,8 +63,9 @@ int main(int argc, char *argv[])
             a = b = c = d = divider;
         }
         encoder_dev_set_divide(500, a, b, c, d);
-        printf("divider of camera %s is set to %d\r\n\r\n", which, divider);
+        printf("clear mode is %s, divider of camera %s is set to %d\r\n\r\n", clear_mode, which, divider);
         which[0] = '\0';
+        clear_mode[0] = '\0';
     }
 }
 

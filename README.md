@@ -9,10 +9,10 @@
 IO扩展版提供了
 
 - 1个12V电源输入
-- 4个相机触发
+- 4个相机触发，本次项目为2个相机触发，其余冗余
 - 1个ZYNQ散热风扇接口 
-- 6个编码器或IO输入
-- 8个阀板接口
+- 6个编码器或IO输入，本次项目为1个编码器输入、1个物体传感器输入，其余冗余
+- 8个阀板接口，本次项目没有用到
 
 接线时，12V电源连接到IO扩展板的电源接口，阀板从左到右应连接在阀板接口1~6上，相机线应连接相机触发接口`TRIG1`和对应的`GND`接口，编码器线应连接在编码器输入接口`E1`和对应的`GND`接口。注意底板不连接任何外部电源。
 
@@ -45,7 +45,7 @@ IO扩展版提供了
 - source为XME0724板子上运行的源程序
 
   - liunx_app为Linux上运行的应用程序，即业务逻辑
-  - linux_driver为Linux上的驱动，用于控制自定义的PL端硬件
+  - linux_driver为Linux上的驱动，用于控制自定义的PL端硬件，其中drv_test结尾的目录为相应驱动模块的测试应用程序
   - petalinux_config为petalinux工具在编译u-boot、kernel、rootfs前进行的配置
   - petalinux_devicetree为本次自定义的Linux设备树文件部分，其余设备树为自动生成的
   - petalinux_hwdescription为petalinux所使用的硬件描述文件，包含了vivado工程中的比特流等信息
