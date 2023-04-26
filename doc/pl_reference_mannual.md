@@ -100,7 +100,7 @@ ENCODER模块的寄存器主要有控制寄存器 (ENCODER_CR)、阀触发分频
 
 偏移地址: 0x00<br/>复位值: 0x0000 0000
 
-![ ](pl_reference_mannual.assets/encoder_cr.png)
+![ ](pl_reference_mannual.assets/encoder_cr.svg)
 
 | **Field**   | **Description**                                              |
 | :---------- | :----------------------------------------------------------- |
@@ -113,17 +113,19 @@ ENCODER模块的寄存器主要有控制寄存器 (ENCODER_CR)、阀触发分频
 
 偏移地址: 0x04<br/>复位值: 0x0000 0000
 
-![image-20220613202916591](pl_reference_mannual.assets/encoder_vdivr.png)
+![image-20220613202916591](pl_reference_mannual.assets/encoder_vdivr.svg)
 
 | **Field**       | **Description**                                              |
 | :-------------- | :----------------------------------------------------------- |
 | 位31:0 **VDIV** | 阀触发分频值<br />    阀控制器重采样频率和编码器脉冲的分频值， 写入数据后编码和分频控制器自动清除缓存并应用新的数值 <br />    注意：0表示不间断触发，即PL端每个时钟周期均触发阀模块 |
 
-#### ENCODER相机触发分频寄存器 (ENCODER_CDIVR)
+#### ENCODER相机触发分频寄存器 (ENCODER_CDIVRx)  (x=A...D) 
+
+用于设定相机A到相机D的分频系数，各相机可独立设置
 
 偏移地址: 0x08<br/>复位值: 0x0000 0000
 
-![image-20220613202916591](pl_reference_mannual.assets/encoder_cdivr.png)
+![image-20220613202916591](pl_reference_mannual.assets/encoder_cdivrx.svg)
 
 | **Field**       | **Description**                                              |
 | :-------------- | :----------------------------------------------------------- |
@@ -133,7 +135,7 @@ ENCODER模块的寄存器主要有控制寄存器 (ENCODER_CR)、阀触发分频
 
 ENCODER寄存器可映射为32位可寻址寄存器，如下表所述：
 
-![encoder_regs](pl_reference_mannual.assets/encoder_regs.png)
+![encoder_regs](pl_reference_mannual.assets/encoder_regs.svg)
 
 ## 先入先出队列 (FIFO)
 

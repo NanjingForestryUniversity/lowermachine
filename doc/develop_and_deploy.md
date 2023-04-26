@@ -2,7 +2,7 @@
 
 ## 开发
 
-本次开发基于zynq xc7z010-1clg400芯片，因此FPGA设计软件为Vitis中包含的[Vivado 2021.2](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/vitis.html)，Linux编译工具为[petalinux 2022.1](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/embedded-design-tools.html)，Linux应用程序编译工具为linaro的[arm-linux-gnueabihf-gcc 12.0.1](https://snapshots.linaro.org/gnu-toolchain/12.0-2022.02-1/arm-linux-gnueabihf/)。
+本次开发基于zynq xc7z010-1clg400芯片，因此FPGA设计软件为Vitis中包含的[Vivado 2022.1](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/vitis.html)，Linux编译工具为[petalinux 2022.2](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/embedded-design-tools.html)，Linux应用程序编译工具为linaro的[arm-linux-gnueabihf-gcc 12.2.1](https://snapshots.linaro.org/gnu-toolchain/12.2-2023.04-1/)。
 
 ### 生成硬件描述文件
 
@@ -10,23 +10,14 @@
 
 ### 创建PETALINUX工程
 
-1. 创建名为`ps-linux`的工程，并创建两个模块
+1. 创建名为`ps-linux`的工程
 
    ```shell
    $ cd ~
    $ petalinux-create -t project --template zynq -n ps-linux
-   $ petalinux-create -t modules --name fifo --enable
-   $ petalinux-create -t modules --name encoder --enable
    ```
    
-2. 分别上传驱动代码[source/linux_driver/fifo.c](../source/linux_driver/fifo.c)和[source/linux_driver/encoder.c](../source/linux_driver/encoder.c)到下面的目录中
-
-   ```shell
-   ~/ps-linux/project-spec/meta-user/recipes-modules/fifo/files
-   ~/ps-linux/project-spec/meta-user/recipes-modules/encoder/files
-   ```
-   
-3. 上传硬件描述文件[source/petalinux_hwdescription/system_wrapper.xsa](source/petalinux_hwdescription/system_wrapper.xsa)到`ps-linux`目录中并config
+2. 上传硬件描述文件[source/petalinux_hwdescription/system_wrapper.xsa](source/petalinux_hwdescription/system_wrapper.xsa)到`ps-linux`目录中并config
 
    ```shell
    system_wrapper.xsa上传到~/ps-linux
@@ -62,9 +53,21 @@
    #   └─Copy final images to tftpboot (不选)
    ```
 
-   
+4. 创建两个模块
 
-4. 修改设备树，需要修改的文件为`project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi`，先删除该文件，然后上传新的自定义设备树文件[source/petalinux_devicetree/system-user.dtsi](../source/petalinux_devicetree/system-user.dtsi)
+    ```shell
+    $ petalinux-create -t modules --name fifo --enable
+    $ petalinux-create -t modules --name encoder --enable
+    ```
+
+1. 分别上传驱动代码[source/linux_driver/fifo.c](../source/linux_driver/fifo.c)和[source/linux_driver/encoder.c](../source/linux_driver/encoder.c)到下面的目录中
+
+   ```shell
+   ~/ps-linux/project-spec/meta-user/recipes-modules/fifo/files
+   ~/ps-linux/project-spec/meta-user/recipes-modules/encoder/files
+   ```
+
+1. 修改设备树，需要修改的文件为`project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi`，先删除该文件，然后上传新的自定义设备树文件[source/petalinux_devicetree/system-user.dtsi](../source/petalinux_devicetree/system-user.dtsi)
 
    ```shell
    $ cd ~/ps-linux/project-spec/meta-user/recipes-bsp/device-tree/files
@@ -72,7 +75,7 @@
    上传source/petalinux_devicetree/system-user.dtsi
    ```
 
-5. 配置kernel，使用命令`petalinux-config -c kernel`，按下面提示或[source/petalinux_config/kernel.cfg](../source/petalinux_config/kernel.cfg)配置
+2. 配置kernel，使用命令`petalinux-config -c kernel`，按下面提示或[source/petalinux_config/kernel.cfg](../source/petalinux_config/kernel.cfg)配置
 
    ```shell
    # File systems
@@ -87,7 +90,7 @@
    #   └─OTG support (勾选为星号)
    ```
 
-6. 配置rootfs，使用命令`petalinux-config -c rootfs`，按下面提示或[source/petalinux_config/rootfs_config](../source/petalinux_config/rootfs_config)配置
+3. 配置rootfs，使用命令`petalinux-config -c rootfs`，按下面提示或[source/petalinux_config/rootfs_config](../source/petalinux_config/rootfs_config)配置
 
    ```shell
    # Filesystem Packages
@@ -194,6 +197,8 @@
    # └─ADD_USERS_TO_SUDOERS (petalinux)
    ```
 
+8. 替换`~/ps-linux/project-spec/meta-user/recipes-bsp/u-boot/files/platform-top.h`为[platform-top.h](./petalinux_config/platform-top.h)，用于添加u-boot所需的环境变量，实现动态加载比特流文件
+
 ### 编译系统
 
 1. 编译工程，使用命令`petalinux-build`。编译完成，在当前工程目录下生成images文件夹，该命令将生成设备树文件、FSBL文件、U-Boot文件，Linux Kernel文件和rootfs文件镜像
@@ -202,7 +207,7 @@
 
    ```shell
    $ cd ~/ps-linux/images/linux/  # 生成的BOOT.BIN在该路径下
-   $ petalinux-package --boot --fsbl ./zynq_fsbl.elf --fpga ./system.bit --u-boot ./u-boot.elf --force
+   $ petalinux-package --boot --fsbl ./zynq_fsbl.elf --u-boot ./u-boot.elf --force
    ```
    
 
@@ -215,14 +220,14 @@ $ petalinux-build -c fifo
 $ petalinux-build -c encoder
 ```
 
-编译后的模块文件为` ps-linux/build/tmp/sysroots-components/zynq_generic/fifo/lib/modules/5.15.19-xilinx-v2022.1/extra/fifo.ko`和`ps-linux/build/tmp/sysroots-components/zynq_generic/encoder/lib/modules/5.15.19-xilinx-v2022.1/extra/encoder.ko`
+编译后的模块文件为` ps-linux/build/tmp/sysroots-components/zynq_generic/fifo/lib/modules/5.15.36-xilinx-v2022.2/extra/fifo.ko`和`ps-linux/build/tmp/sysroots-components/zynq_generic/encoder/lib/modules/5.15.36-xilinx-v2022.2/extra/encoder.ko`
 
 ### 编译应用程序
 
 在运行make时要设置好交叉编译工具链前缀，命令如下
 ```shell
 $ make CROSS_COMPILE=交叉编译工具链前缀
-例如 make CROSS_COMPILE=/home/miaow/software/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-
+例如 make CROSS_COMPILE=/home/miaow/software/gcc-linaro-12.2.1-2023.04-x86_64_arm-linux-gnueabihf/bin/arm-none-linux-gnueabihf-
 ```
 
 编译后的可执行文件为工程目录的`build/target`，交叉编译工具链前缀也可以在Makefile中修改设定
@@ -245,7 +250,9 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
    | 2048~x扇区     | 100M           | C W95 FAT32 (LBA) | FAT32    | boot   |
    | x扇区~最后扇区 | ≈SD卡大小-100M | 83 Linux          | ext4     | rootfs |
 
-2. 将打包和编译得到的BOOT.BIN、boot.scr和image.ub复制到boot分区；将rootfs.tar.gz解压到rootfs分区。
+2. 将打包和编译得到的BOOT.BIN、boot.scr、system.bit和image.ub复制到boot分区；将rootfs.tar.gz解压到rootfs分区
+
+   > 注意: 这里的system.bit为比特流文件，可以由petalinux从XSA文件中提取，也可以是vivado生成的，注意命名为system.bit。
 
 3. 拨码开关拨到SD卡启动，插入SD卡到XME0724底板上，上电启动。
 
@@ -278,8 +285,6 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
      PasswordAuthentication yes
    $ reboot
    ```
-
-   
 
 7. 电脑网卡设置到开发板同一网段 SSH连接信息如下
 
