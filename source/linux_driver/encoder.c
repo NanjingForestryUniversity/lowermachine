@@ -77,7 +77,7 @@ static struct encoder_dev encoder;
 static int encoder_open(struct inode *inode, struct file *filp)
 {
     u32 data = readl(encoder_cr_addr);
-    writel(data & ~ENCODER_CR_CLR_MASK, encoder_cr_addr);
+    writel(data | ENCODER_CR_CLR_MASK, encoder_cr_addr);
     return 0;
 }
 
@@ -95,7 +95,7 @@ static ssize_t encoder_write(struct file *filp, const char __user *buf, size_t c
 
     u32 data;
     kernelbuf_typedef kern_buf = {
-        .valve_divide_value = 0,
+        .valve_divide_value = 0,writel
         .camera_a_divide_value = 0,
         .camera_b_divide_value = 0,
         .camera_c_divide_value = 0,
@@ -142,7 +142,7 @@ static ssize_t encoder_write(struct file *filp, const char __user *buf, size_t c
 static int encoder_release(struct inode *inode, struct file *filp)
 {
     u32 data = readl(encoder_cr_addr);
-    writel(data | ENCODER_CR_CLR_MASK, encoder_cr_addr);
+    writel(data & ~ENCODER_CR_CLR_MASK, encoder_cr_addr);
     return 0;
 }
 

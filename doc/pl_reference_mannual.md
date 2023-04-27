@@ -98,7 +98,7 @@ ENCODER模块的寄存器主要有控制寄存器 (ENCODER_CR)、阀触发分频
 
 #### ENCODER控制寄存器 (ENCODER_CR)
 
-偏移地址: 0x00<br/>复位值: 0x0000 0009
+偏移地址: 0x00<br/>复位值: 0x0000 0008
 
 ![ ](pl_reference_mannual.assets/encoder_cr.svg)
 
@@ -108,7 +108,7 @@ ENCODER模块的寄存器主要有控制寄存器 (ENCODER_CR)、阀触发分频
 | 位3 **ICO** | 仅限内部清除缓存 (Internal Clear Only)<br />    0: 同时允许由外部输入**Ex CLR**和清除缓存位**CLR**控制进入清零状态<br />        清零状态见位**CLR**的描述；外部输入为高时，退出清零状态<br />    1: 仅限内部信号清除缓存 |
 | 位2 **VTS** | 内部触发信号 (Virtual Triggle Signal)<br />    **MOD**位置1时，由软件写入，将该位信号直接充当触发信号<br />    0: 低电平<br />    1: 高电平 |
 | 位1 **MOD** | 模式选择 (Mode)<br />    0: 外部触发模式，外部触发编码器转动<br />    1: 内部触发模式，软件模拟触发信号 |
-| 位0 **CLR** | 清除缓存 (Clear)<br />   0: 正常工作 <br />   1: 清除编码和分频控制器内部的分频计数值，不影响ENCODER_VDIVRx和ENCODER_CDIVR<br /> 注意: 程序置位该位后后需再写入0，使计数器退出清零状态，正常工作 |
+| 位0 **CLR** | 清除缓存 (Clear)<br />   0: 清除编码和分频控制器内部的分频计数值，不影响ENCODER_VDIVR和ENCODER_CDIVRx<br /> 注意: 程序清零该位后需再写入1，使计数器退出清零状态，正常工作 <br />   1: 正常工作 |
 
 #### ENCODER阀触发分频寄存器 (ENCODER_VDIVR)
 
