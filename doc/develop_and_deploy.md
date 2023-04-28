@@ -2,11 +2,26 @@
 
 ## 开发
 
-本次开发基于zynq xc7z010-1clg400芯片，因此FPGA设计软件为Vitis中包含的[Vivado 2022.1](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/vitis.html)，Linux编译工具为[petalinux 2022.2](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/embedded-design-tools.html)，Linux应用程序编译工具为linaro的[arm-linux-gnueabihf-gcc 12.2.1](https://snapshots.linaro.org/gnu-toolchain/12.2-2023.04-1/)。
+本次开发基于zynq `xc7z010-1clg400`芯片，因此FPGA设计软件为Vitis中包含的[Vivado 2022.1](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/vitis.html)，Linux编译工具为[petalinux 2022.2](https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/embedded-design-tools.html)，Linux应用程序编译工具为linaro的[arm-linux-gnueabihf-gcc 12.2.1](https://snapshots.linaro.org/gnu-toolchain/12.2-2023.04-1/)。
 
 ### 生成硬件描述文件
 
-见[doc/hardware_description.md](hardware_description.md)
+1. 下载[hardware/pl_platform](../hardware/pl_platform)文件夹到家目录，这里假设用户为miaow<br />在vivado 2022.1中执行tcl脚本，复原工程
+    ```tcl
+    source /home/miaow/pl_platform/lower_machine.tcl
+    ```
+
+2. 重新生成`block design`的`output products`
+
+3. 生成`bitstream`后创建硬件描述文件，命令为
+    ```tcl
+    # 下面命令中32为计算机逻辑内核数，按实际设定
+    launch_runs impl_1 -to_step write_bitstream -jobs 32
+
+    # 生成硬件描述文件
+    write_hw_platform -fixed -include_bit -force -file /home/miaow/zynq/vivado_git/lower_machine/system_wrapper.xsa
+    ```
+   硬件描述文件为`system_wrapper.xsa`
 
 ### 创建PETALINUX工程
 
@@ -17,7 +32,7 @@
    $ petalinux-create -t project --template zynq -n ps-linux
    ```
    
-2. 上传硬件描述文件[source/petalinux_hwdescription/system_wrapper.xsa](source/petalinux_hwdescription/system_wrapper.xsa)到`ps-linux`目录中并config
+2. 上传release中的硬件描述文件`system_wrapper.xsa`到`ps-linux`目录中并config
 
    ```shell
    system_wrapper.xsa上传到~/ps-linux
@@ -53,17 +68,15 @@
    #   └─Copy final images to tftpboot (不选)
    ```
 
-4. 创建两个模块
+4. 创建一个模块
 
     ```shell
-    $ petalinux-create -t modules --name fifo --enable
     $ petalinux-create -t modules --name encoder --enable
     ```
 
-1. 分别上传驱动代码[source/linux_driver/fifo.c](../source/linux_driver/fifo.c)和[source/linux_driver/encoder.c](../source/linux_driver/encoder.c)到下面的目录中
+1. 上传驱动代码[source/linux_driver/encoder.c](../source/linux_driver/encoder.c)到下面的目录中
 
    ```shell
-   ~/ps-linux/project-spec/meta-user/recipes-modules/fifo/files
    ~/ps-linux/project-spec/meta-user/recipes-modules/encoder/files
    ```
 
@@ -75,7 +88,7 @@
    上传source/petalinux_devicetree/system-user.dtsi
    ```
 
-2. 配置kernel，使用命令`petalinux-config -c kernel`，按下面提示或[source/petalinux_config/kernel.cfg](../source/petalinux_config/kernel.cfg)配置
+2. 配置`kernel`，使用命令`petalinux-config -c kernel`，按下面提示或[source/petalinux_config/kernel.cfg](../source/petalinux_config/kernel.cfg)配置
 
    ```shell
    # File systems
@@ -90,7 +103,7 @@
    #   └─OTG support (勾选为星号)
    ```
 
-3. 配置rootfs，使用命令`petalinux-config -c rootfs`，按下面提示或[source/petalinux_config/rootfs_config](../source/petalinux_config/rootfs_config)配置
+3. 配置`rootfs`，使用命令`petalinux-config -c rootfs`，按下面提示或[source/petalinux_config/rootfs_config](../source/petalinux_config/rootfs_config)配置
 
    ```shell
    # Filesystem Packages
@@ -190,18 +203,17 @@
    # ├─imagefeature-package-management (勾选为星号)
    # modules
    # ├─encoder (不选)
-   # ├─fifo (不选)
    # PetaLinux RootFS Settings
    # ├─ADD_EXTRA_USERS (root:3703;petalinux:3703;)
    # ├─ADD_USERS_TO_GROUPS (petalinux:audio,video;)
    # └─ADD_USERS_TO_SUDOERS (petalinux)
    ```
 
-8. 替换`~/ps-linux/project-spec/meta-user/recipes-bsp/u-boot/files/platform-top.h`为[platform-top.h](./petalinux_config/platform-top.h)，用于添加u-boot所需的环境变量，实现动态加载比特流文件
+8. 替换`~/ps-linux/project-spec/meta-user/recipes-bsp/u-boot/files/platform-top.h`为[platform-top.h](../source/petalinux_config/platform-top.h)，用于添加u-boot所需的环境变量，实现动态加载比特流文件
 
 ### 编译系统
 
-1. 编译工程，使用命令`petalinux-build`。编译完成，在当前工程目录下生成images文件夹，该命令将生成设备树文件、FSBL文件、U-Boot文件，Linux Kernel文件和rootfs文件镜像
+1. 编译工程，使用命令`petalinux-build`。编译完成，在当前工程目录下生成`images`文件夹，该命令将生成设备树文件、`FSBL`文件、`U-Boot`文件，`Linux Kernel`文件和`rootfs`文件镜像
 
 2. 制作BOOT.BIN启动文件，具体命令如下：
 
@@ -213,14 +225,13 @@
 
 ### 编译驱动
 
-依次运行如下命令，单独编译3个驱动程序
+依次运行如下命令，编译驱动程序
 
 ```shell
-$ petalinux-build -c fifo
 $ petalinux-build -c encoder
 ```
 
-编译后的模块文件为` ps-linux/build/tmp/sysroots-components/zynq_generic/fifo/lib/modules/5.15.36-xilinx-v2022.2/extra/fifo.ko`和`ps-linux/build/tmp/sysroots-components/zynq_generic/encoder/lib/modules/5.15.36-xilinx-v2022.2/extra/encoder.ko`
+编译后的模块文件为`ps-linux/build/tmp/sysroots-components/zynq_generic/encoder/lib/modules/5.15.36-xilinx-v2022.2/extra/encoder.ko`
 
 ### 编译应用程序
 
@@ -241,8 +252,6 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
 
 ### 修改文件系统
 
-> 注意：github的release中包含了修改完成的rootfs.tar.gz，因此无需重复本节的步骤，本节仅用作记录修改步骤
-
 1. 给SD卡创建DOS分区表，然后分2个区并创建文件系统，细节如下表：
 
    | 扇区           | 大小           | 分区类型          | 文件系统 | 卷标   |
@@ -250,15 +259,17 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
    | 2048~x扇区     | 100M           | C W95 FAT32 (LBA) | FAT32    | boot   |
    | x扇区~最后扇区 | ≈SD卡大小-100M | 83 Linux          | ext4     | rootfs |
 
-2. 将打包和编译得到的BOOT.BIN、boot.scr、system.bit和image.ub复制到boot分区；将rootfs.tar.gz解压到rootfs分区
+2. 将打包和编译得到的`BOOT.BIN`、`boot.scr`、`system.bit`和`image.ub`复制到`boot`分区；将`rootfs.tar.gz`解压到`rootfs`分区
 
-   > 注意: 这里的system.bit为比特流文件，可以由petalinux从XSA文件中提取，也可以是vivado生成的，注意命名为system.bit。
+   这里的`system.bit`为比特流文件，可以由`petalinux`从`XSA`文件中提取，也可以是`vivado`生成的，注意重命名为`system.bit`。
 
 3. 拨码开关拨到SD卡启动，插入SD卡到XME0724底板上，上电启动。
 
 4. 终端软件连接底板上的串口，波特率115200，8位，1停止位，无校验
 
-5. 修改/etc/shadow文件，将root用户的密码删除，切换到root用户并设定密码为3703，具体命令如下:
+> 注意：github的release中包含了修改完成的`rootfs.tar.gz`，因此无需重复下面的步骤，这里仅用作记录修改步骤
+
+5. 修改`/etc/shadow`文件，将`root`用户的密码删除，切换到`root`用户并设定密码为`3703`，具体命令如下:
 
    ```shell
    $ sudo sed "1c root::15069:0:99999:7:::" /etc/shadow
@@ -268,7 +279,7 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
    ```
 
 
-6. 配置网络和ssh服务，用root登录：
+6. 配置网络和`ssh`服务，用`root`登录：
 
    ```shell
    $ vi /etc/network/interfaces
@@ -293,17 +304,14 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
    $ sshpass -p "3703" ssh root@192.168.10.10 -p 22
    ```
 
-8. 安装编译得到的驱动文件fifo.ko和encode.ko，并设置自动加载，对应自启脚本可以如下方式写入，也可以直接上传[script/loadfifo.sh](../script/loadfifo.sh)和[script/loadencoder.sh](../script/loadencoder.sh)，ssh方式，root登录:
+8. 安装编译得到的驱动文件`encode.ko`，并设置自动加载，对应自启脚本可以如下方式写入，也可以直接上传[script/loadencoder.sh](../script/loadencoder.sh)，ssh方式，`root`登录:
 
    ```shell
-   上传fifo.ko、encoder.ko到/lib/modules/[内核版本]/kernel/drivers/
+   上传encoder.ko到/lib/modules/[内核版本]/kernel/drivers/
    $ cd /lib/modules/[内核版本]; depmod
    $ set +H
-   $ echo -e "#!/bin/sh\nmodprobe fifo" > /etc/init.d/loadfifo.sh
    $ echo -e "#!/bin/sh\nmodprobe encoder" > /etc/init.d/loadencoder.sh
-   $ chmod 755 /etc/init.d/loadfifo.sh /etc/init.d/loadencoder.sh
    $ cd /etc/rc5.d 
-   $ ln -s ../init.d/loadfifo.sh S20loadfifo.sh
    $ ln -s ../init.d/loadencoder.sh S20loadencoder.sh
    ```
    
@@ -322,35 +330,35 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
    $ ln -s ../init.d/target.sh S99target.sh
    ```
 
-10. \[可选\] 设置.bashrc，修改PS1，对应脚本见[script/.profile](../script/.profile)和[script/.bashrc](../script/.bashrc)
+10. \[可选\] 设置`.bashrc`，修改`PS1`，对应脚本见[script/.profile](../script/.profile)和[script/.bashrc](../script/.bashrc)
 
-   ```shell
-   $ cd ~; rm .bashrc .profile
-   上传.bashrc和.profile到/home/root
-   $ if [ ! -a /home/petalinux/.profile ]; then cp /home/root/.profile /home/petalinux/ fi
-   $ if [ ! -a /home/petalinux/.bashrc ]; then cp /home/root/.bashrc /home/petalinux/ & chown petalinux:petalinux -R /home/petalinux fi
-   $ source ~/.profile
-   ```
+    ```shell
+    $ cd ~; rm .bashrc .profile
+    上传.bashrc和.profile到/home/root
+    $ if [ ! -a /home/petalinux/.profile ]; then cp /home/    root/.profile /home/petalinux/ fi
+    $ if [ ! -a /home/petalinux/.bashrc ]; then cp /home/root/.    bashrc /home/petalinux/ & chown petalinux:petalinux -R /    home/petalinux fi
+    $ source ~/.profile
+    ```
 
-11. \[可选\] 安装ncurses-6.3和htop
+11. \[可选\] 安装`ncurses-6.3`和`htop`
 
-   ```shell
-   $ cd ~; rz  # 上传ncurses-6.3.tar.gz
-   $ tar xmzf /home/root/ncurses-6.3.tar.gz -C /usr/
-   $ rz  # 上传htop.tar.gz
-   $ tar xmzf /home/root/htop.tar.gz -C /usr/
-   $ echo "export TERMINFO=/usr/share/terminfo" >> /etc/profile
-   $ reboot
-   ```
+    ```shell
+    $ cd ~; rz  # 上传ncurses-6.3.tar.gz
+    $ tar xmzf /home/root/ncurses-6.3.tar.gz -C /usr/
+    $ rz  # 上传htop.tar.gz
+    $ tar xmzf /home/root/htop.tar.gz -C /usr/
+    $ echo "export TERMINFO=/usr/share/terminfo" >> /etc/profile
+    $ reboot
+    ```
 
 ### 直接写入镜像
 
-强烈推荐的傻瓜式的方法，在windows上准备好正版[DiskGenius标准版或专业版](https://www.diskgenius.cn/)，盗版有BUG，从release中下载sdimage.pmfx文件
+强烈推荐的傻瓜式的方法，在windows上准备好正版[DiskGenius标准版或专业版](https://www.diskgenius.cn/)，盗版有概率写入错误数据，从release中下载`sdimage.pmfx`文件
 
 1. 在windows上插入16G的TF卡
-2. 打开DiskGenius
+2. 打开`DiskGenius`
 3. 左侧栏选中TF卡，右键，从镜像文件还原磁盘
-4. 选sdimage.pmfx文件
+4. 选`sdimage.pmfx`文件
 5. 点击开始
 
 把TF卡插回板子，启动方式拨到SD卡启动，上电。要进入系统，参考修改文件系统章节的第7步。
