@@ -37,8 +37,7 @@ typedef enum
     ENCODER_CLEAR_MODE_INTERNAL = 201
 } encoder_dev_clear_mode_enum;
 
-int encoder_dev_set_divide(int valve_divide,
-                           int camera_a_divide,
+int encoder_dev_set_divide(int camera_a_divide,
                            int camera_b_divide,
                            int camera_c_divide,
                            int camera_d_divide);

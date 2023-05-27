@@ -188,12 +188,12 @@ static long encoder_ioctl(struct file *fp, unsigned int cmd, unsigned long tmp)
         // 3. 恢复为原来的状态和模式
         writel(data, encoder_cr_addr);
     }
-    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_INTERNAL)
+    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_BOTH)
     {
         // 设为允许内部和外部信号清除缓存
         writel(data & ~ENCODER_CR_ICO_MASK, encoder_cr_addr);
     }
-    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_BOTH)
+    else if (cmd_parsed == ENCODER_CMD_CLEAR_MODE_INTERNAL)
     {
         // 设为仅允许内部清除缓存
         writel(data | ENCODER_CR_ICO_MASK, encoder_cr_addr);

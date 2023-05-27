@@ -307,10 +307,11 @@ $ make CROSS_COMPILE=交叉编译工具链前缀
 8. 安装编译得到的驱动文件`encode.ko`，并设置自动加载，对应自启脚本可以如下方式写入，也可以直接上传[script/loadencoder.sh](../script/loadencoder.sh)，ssh方式，`root`登录:
 
    ```shell
-   上传encoder.ko到/lib/modules/[内核版本]/kernel/drivers/
-   $ cd /lib/modules/[内核版本]; depmod
+   上传encoder.ko到/lib/modules/[内核版本]/extra/
+   $ cd /lib/modules/[内核版本]/extra/; depmod
    $ set +H
    $ echo -e "#!/bin/sh\nmodprobe encoder" > /etc/init.d/loadencoder.sh
+   $ chmod 755 /etc/init.d/loadencoder.sh
    $ cd /etc/rc5.d 
    $ ln -s ../init.d/loadencoder.sh S20loadencoder.sh
    ```

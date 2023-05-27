@@ -57,8 +57,6 @@ int encoder_dev_init()
 
 /**
  * @brief Set the two divider in the hareware encoder unit.
- * @param valve_divide the frequency division factor between the encoder signal and valve output
- *                      Set ENCODER_DEV_DIVIDE_NOT_TO_SET to skip changing the division facter
  * @param camera_a_divide the frequency division factor between the encoder signal and camera a triggle signal
  *                      Set ENCODER_DEV_DIVIDE_NOT_TO_SET to skip changing the division facter
  * @param camera_b_divide the frequency division factor between the encoder signal and camera b triggle signal
@@ -69,14 +67,13 @@ int encoder_dev_init()
  *                      Set ENCODER_DEV_DIVIDE_NOT_TO_SET to skip changing the division facter
  * @return 0 - success, other - error
  */
-int encoder_dev_set_divide(int valve_divide,
-                           int camera_a_divide,
+int encoder_dev_set_divide(int camera_a_divide,
                            int camera_b_divide,
                            int camera_c_divide,
                            int camera_d_divide)
 {
     if (valve_divide != ENCODER_DEV_DIVIDE_NOT_TO_SET)
-        encoder_dev_divide_value_structure.valve_divide_value = valve_divide;
+        encoder_dev_divide_value_structure.valve_divide_value = 100;
     if (camera_a_divide != ENCODER_DEV_DIVIDE_NOT_TO_SET)
         encoder_dev_divide_value_structure.camera_a_divide_value = camera_a_divide;
     if (camera_b_divide != ENCODER_DEV_DIVIDE_NOT_TO_SET)
