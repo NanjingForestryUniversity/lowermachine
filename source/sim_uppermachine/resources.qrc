@@ -1,0 +1,39 @@
+<RCC>
+    <qresource prefix="images">
+        <file>images/images/PyDracula.png</file>
+        <file>images/images/PyDracula_vertical.png</file>
+    </qresource>
+    <qresource prefix="icons">
+        <file>images/icons/chevron-miniup.png</file>
+        <file>images/icons/chevron-down.png</file>
+        <file>images/icons/chevron-minidown.png</file>
+        <file>images/icons/chevron-statusbarup.png</file>
+        <file>images/icons/chevron-statusbardown.png</file>
+        <file>images/icons/save.png</file>
+        <file>images/icons/log-out.png</file>
+        <file>images/icons/image.png</file>
+        <file>images/icons/aperture.png</file>
+        <file>images/icons/sliders.png</file>
+        <file>images/icons/home.png</file>
+        <file>images/icons/close.png</file>
+        <file>images/icons/maximize.png</file>
+        <file>images/icons/menu.png</file>
+        <file>images/icons/minimize.png</file>
+        <file>images/icons/restore.png</file>
+        <file>images/icons/camera-and-down.png</file>
+        <file>images/icons/play.png</file>
+        <file>images/icons/30-height-sep.png</file>
+        <file>images/icons/chevron-right.png</file>
+        <file>images/icons/chevron-left.png</file>
+        <file>images/icons/plus.png</file>
+        <file>images/icons/arrow-right.png</file>
+        <file>images/icons/camera.png</file>
+        <file>images/icons/wind.png</file>
+        <file>images/icons/link-2.png</file>
+        <file>images/icons/link.png</file>
+        <file>images/icons/square.png</file>
+        <file>images/icons/shuffle.png</file>
+        <file>images/icons/rotate-ccw.png</file>
+
+    </qresource>
+</RCC>

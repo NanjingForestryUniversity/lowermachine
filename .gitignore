@@ -65,3 +65,10 @@
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+__pycache__/
+*.py[cod]
+venv/
+.idea/
+

@@ -25,6 +25,7 @@ IO扩展版提供了
   - [develop_and_deploy.md](doc/develop_and_deploy.md)为开发和部署说明，首先看这个文档
   - [hardware_description.md](doc/hardware_description.md)为PL端逻辑设计说明，阐述了硬件工作的整体流程
   - [pl_reference_mannual.md](doc/pl_reference_mannual.md)为PL端逻辑在AXI总线上映射的寄存器参考手册
+  - [sim_uppermachine_manual.md](doc/sim_uppermachine_manual.md)为模拟上位机运行的参考手册
 
 - script为配置系统、安装环境、安装可执行文件、卸载可执行文件等的脚本
 
@@ -42,13 +43,14 @@ IO扩展版提供了
   - pl_platform为PL端硬件设计
   - xme0724ioextend为IO叠板的原理图和PCB
 
-- source为XME0724板子上运行的源程序
+- source为XME0724板子上运行的源程序和模拟上位机程序
 
   - liunx_app为Linux上运行的应用程序，即业务逻辑
   - linux_driver为Linux上的驱动，用于控制自定义的PL端硬件，其中drv_test结尾的目录为相应驱动模块的测试应用程序
   - petalinux_config为petalinux工具在编译u-boot、kernel、rootfs前进行的配置
   - petalinux_devicetree为本次自定义的Linux设备树文件部分，其余设备树为自动生成的
   - petalinux_hwdescription为petalinux所使用的硬件描述文件，包含了vivado工程中的比特流等信息
+  - sim_uppermachine_manul为基于pyside6所编写的软件，用于模拟上位机发送指令，方便调试
 
 ## 版本
 
@@ -74,4 +76,4 @@ b分支编号-d文档版本-hPCB设计版本-lFPGA设计版本-p协议版本-s�
 
 ##  作者
 
-作者觉得还是不说明作者是谁比较好，免得毕业后有提着示波器的师弟师妹来问问题
+作者觉得还是不说明是谁比较好，免得毕业后有提着示波器的师弟师妹来问问题
