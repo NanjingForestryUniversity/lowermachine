@@ -1,0 +1,7 @@
+Record=TopLevelDocument|FileName=01_ZYNQ_POWER.SchDoc|SheetNumber=1
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=02_ZYNQ_CORE_POS.SchDoc|SheetNumber=2
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=03_ZYNQ_JTAG_BOOT.SchDoc|SheetNumber=3
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=04_ZYNQ_MISC_INTERFACE.SchDoc|SheetNumber=4
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=05_ZYNQ_ETHERNET.SchDoc|SheetNumber=5
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=06_ZYNQ_CAMERALINK.SchDoc|SheetNumber=6
+Record=NoMainPathDocument|SourceDocument=01_ZYNQ_POWER.SchDoc|FileName=07_ZYNQ_CAMERALINK.SchDoc|SheetNumber=7
